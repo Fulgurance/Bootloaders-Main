@@ -1,0 +1,63 @@
+{
+  "port": "Bootloaders-Main",
+  "name": "Grub",
+  "version": "2.6.0",
+  "architectures": ["x86_64"],
+  "description": "Multiboot boot loader",
+  "website": "https://www.gnu.org/software/grub/",
+  "downloadLinks": ["https://ftp.gnu.org/gnu/grub/grub-2.06.tar.xz"],
+  "md5sums": ["cf0fd928b1e5479c8108ee52cb114363"],
+  "patchesLinks": [],
+  "installedFiles": [],
+  "dependencies": [],
+  "options": [
+    {
+      "name": "Unifont",
+      "description": "Enable Unifont support",
+      "active": true,
+      "dependencies": [
+        {
+          "name": "Unifont",
+          "version": "13.0.6",
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "Efibootmgr",
+      "description": "Enable Efibootmgr support",
+      "active": false,
+      "dependencies": [
+        {
+          "name": "Efibootmgr",
+          "version": "17.0.0",
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "FreeType",
+      "description": "Enable FreeType support",
+      "active": true,
+      "dependencies": [
+        {
+          "name": "FreeType",
+          "version": "2.11.0",
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "Lvm2",
+      "description": "Enable Lvm2 support",
+      "active": false,
+      "dependencies": [
+        {
+          "name": "Lvm2",
+          "version": "2.3.13",
+          "options": []
+        }
+      ]
+    },
+  ]
+}

@@ -4,7 +4,7 @@
   "version": "37.0.0",
   "architectures": ["x86_64"],
   "description": "Tools and libraries to work with EFI variables",
-  "website": " https://github.com/rhboot/efivar",
+  "website": "https://github.com/rhboot/efivar",
   "downloadLinks": ["https://github.com/rhboot/efivar/releases/download/37/efivar-37.tar.bz2"],
   "md5sums": ["9f067275c5f7aafdd75bfb364280ac9c"],
   "patchesLinks": ["https://www.linuxfromscratch.org/patches/blfs/11.0/efivar-37-gcc_9-1.patch"],

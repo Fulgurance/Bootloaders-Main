@@ -1,0 +1,25 @@
+{
+  "port": "Bootloaders-Main",
+  "name": "Efibootmgr",
+  "version": "17.0.0",
+  "architectures": ["x86_64"],
+  "description": "Linux user-space application to modify the Intel EFI Boot Manager",
+  "website": "https://github.com/rhboot/efibootmgr",
+  "downloadLinks": ["https://github.com/rhboot/efibootmgr/archive/17/efibootmgr-17.tar.gz"],
+  "md5sums": ["6ae315936d9bc8613b3a4cb8a4064128"],
+  "patchesLinks": [],
+  "installedFiles": [],
+  "dependencies": [
+    {
+      "name": "Efivar",
+      "version": "37.0.0",
+      "options": []
+    },
+    {
+      "name": "Popt",
+      "version": "1.18.0",
+      "options": []
+    }
+  ],
+  "options": []
+}
