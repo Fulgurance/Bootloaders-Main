@@ -23,7 +23,7 @@
         }
       ],
       "downloadLinks": [],
-      "md5sums": [],
+      "md5sums": []
     },
     {
       "name": "Efibootmgr",
@@ -37,7 +37,7 @@
         }
       ],
       "downloadLinks": [],
-      "md5sums": [],
+      "md5sums": []
     },
     {
       "name": "FreeType",
@@ -51,7 +51,7 @@
         }
       ],
       "downloadLinks": [],
-      "md5sums": [],
+      "md5sums": []
     },
     {
       "name": "Lvm2",
@@ -65,7 +65,7 @@
         }
       ],
       "downloadLinks": [],
-      "md5sums": [],
+      "md5sums": []
     },
   ]
 }
