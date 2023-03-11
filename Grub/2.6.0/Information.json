@@ -9,7 +9,13 @@
   "md5sums": ["cf0fd928b1e5479c8108ee52cb114363"],
   "patchesLinks": [],
   "installedFiles": [],
-  "dependencies": [],
+  "dependencies": [
+    {
+      "name": "Groff",
+      "version": "1.22.4",
+      "options": []
+    }
+  ],
   "options": [
     {
       "name": "Unifont",
