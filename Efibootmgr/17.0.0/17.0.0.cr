@@ -2,7 +2,7 @@ class Target < ISM::Software
 
     def prepare
         super
-        fileDeleteLine("#{buildDirectoryPath}src/efibootmgr.c",1541)
+        fileDeleteLine("#{buildDirectoryPath(false)}src/efibootmgr.c",1541)
     end
 
     def build
