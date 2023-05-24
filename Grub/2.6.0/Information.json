@@ -5,9 +5,6 @@
   "architectures": ["x86_64"],
   "description": "Multiboot boot loader",
   "website": "https://www.gnu.org/software/grub/",
-  "downloadLinks": ["https://ftp.gnu.org/gnu/grub/grub-2.06.tar.xz"],
-  "md5sums": ["cf0fd928b1e5479c8108ee52cb114363"],
-  "patchesLinks": [],
   "installedFiles": [],
   "dependencies": [
     {
@@ -28,8 +25,6 @@
           "options": []
         }
       ],
-      "downloadLinks": [],
-      "md5sums": []
     },
     {
       "name": "Efibootmgr",
@@ -42,8 +37,6 @@
           "options": []
         }
       ],
-      "downloadLinks": [],
-      "md5sums": []
     },
     {
       "name": "FreeType",
@@ -56,8 +49,6 @@
           "options": []
         }
       ],
-      "downloadLinks": [],
-      "md5sums": []
     },
     {
       "name": "Lvm2",
@@ -70,8 +61,6 @@
           "options": []
         }
       ],
-      "downloadLinks": [],
-      "md5sums": []
     }
   ]
 }
