@@ -3,7 +3,7 @@ class Target < ISM::Software
     def build
         super
 
-        makeSource(["CFLAGS=-O2 -Wno-stringop-truncation"],buildDirectoryPath)
+        makeSource(path: buildDirectoryPath, environment: {"CFLAGS=-O2" => "-Wno-stringop-truncation"})
     end
     
     def prepareInstallation
