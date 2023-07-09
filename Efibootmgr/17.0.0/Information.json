@@ -18,6 +18,6 @@
       "options": []
     }
   ],
-  "kernelDependencies": [],
+  "kernelDependencies": ["CONFIG_EFI","CONFIG_EFI_STUB","CONFIG_EFI_VARS","CONFIG_EFI_RUNTIME_MAP","CONFIG_PARTITION_ADVANCED","CONFIG_EFI_PARTITION","CONFIG_FB","CONFIG_FB_EFI","CONFIG_FRAMEBUFFER_CONSOLE","CONFIG_EFIVAR_FS"],
   "options": []
 }
