@@ -2,7 +2,9 @@
   "port": "Bootloaders-Main",
   "name": "Efibootmgr",
   "version": "17.0.0",
-  "architectures": ["x86_64"],
+  "architectures": [
+    "x86_64"
+  ],
   "description": "Linux user-space application to modify the Intel EFI Boot Manager",
   "website": "https://github.com/rhboot/efibootmgr",
   "installedFiles": [],
@@ -18,6 +20,17 @@
       "options": []
     }
   ],
-  "kernelDependencies": ["CONFIG_EFI","CONFIG_EFI_STUB","CONFIG_EFI_VARS","CONFIG_EFI_RUNTIME_MAP","CONFIG_PARTITION_ADVANCED","CONFIG_EFI_PARTITION","CONFIG_FB","CONFIG_FB_EFI","CONFIG_FRAMEBUFFER_CONSOLE","CONFIG_EFIVAR_FS"],
+  "kernelDependencies": [
+    "CONFIG_EFI",
+    "CONFIG_EFI_STUB",
+    "CONFIG_EFI_VARS",
+    "CONFIG_EFI_RUNTIME_MAP",
+    "CONFIG_PARTITION_ADVANCED",
+    "CONFIG_EFI_PARTITION",
+    "CONFIG_FB",
+    "CONFIG_FB_EFI",
+    "CONFIG_FRAMEBUFFER_CONSOLE",
+    "CONFIG_EFIVAR_FS"
+  ],
   "options": []
 }

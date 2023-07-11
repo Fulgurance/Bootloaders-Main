@@ -2,7 +2,9 @@
   "port": "Bootloaders-Main",
   "name": "Grub",
   "version": "2.6.0",
-  "architectures": ["x86_64"],
+  "architectures": [
+    "x86_64"
+  ],
   "description": "Multiboot boot loader",
   "website": "https://www.gnu.org/software/grub/",
   "installedFiles": [],
@@ -25,7 +27,8 @@
           "version": "13.0.6",
           "options": []
         }
-      ]
+      ],
+      "kernelDependencies": []
     },
     {
       "name": "Efibootmgr",
@@ -37,7 +40,8 @@
           "version": "17.0.0",
           "options": []
         }
-      ]
+      ],
+      "kernelDependencies": []
     },
     {
       "name": "FreeType",
@@ -49,7 +53,8 @@
           "version": "2.11.0",
           "options": []
         }
-      ]
+      ],
+      "kernelDependencies": []
     },
     {
       "name": "Lvm2",
@@ -61,7 +66,8 @@
           "version": "2.3.13",
           "options": []
         }
-      ]
+      ],
+      "kernelDependencies": []
     }
   ]
 }
