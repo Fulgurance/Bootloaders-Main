@@ -32,5 +32,6 @@
     "CONFIG_FRAMEBUFFER_CONSOLE",
     "CONFIG_EFIVAR_FS"
   ],
-  "options": []
+  "options": [],
+  "uniqueOptions": []
 }
