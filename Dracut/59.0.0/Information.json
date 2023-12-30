@@ -10,8 +10,8 @@
   "installedFiles": [],
   "dependencies": [
     {
-      "name": "SystemBase",
-      "version": ">=0.2.0",
+      "name": "Cpio",
+      "version": ">=2.14.0",
       "options": []
     }
   ],
