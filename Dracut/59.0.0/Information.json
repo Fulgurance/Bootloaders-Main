@@ -1,0 +1,21 @@
+{
+  "port": "Bootloaders-Main",
+  "name": "Dracut",
+  "version": "59.0.0",
+  "architectures": [
+    "x86_64"
+  ],
+  "description": "The event driven initramfs infrastructure",
+  "website": "https://github.com/dracutdevs/dracut",
+  "installedFiles": [],
+  "dependencies": [
+    {
+      "name": "SystemBase",
+      "version": ">=0.2.0",
+      "options": []
+    }
+  ],
+  "kernelDependencies": [],
+  "options": [],
+  "uniqueOptions": []
+}
