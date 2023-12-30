@@ -6,7 +6,8 @@ class Target < ISM::Software
         configureSource([   "--prefix=/usr",
                             "--sysconfdir=/etc",
                             "--disable-documentation",
-                            "--systemdsystemunitdir=no"],
+                            "--systemdsystemunitdir=no",
+                            "--enable-dracut-cpio=no"],
                             buildDirectoryPath)
     end
     
