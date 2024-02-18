@@ -33,5 +33,6 @@
     "CONFIG_EFIVAR_FS"
   ],
   "options": [],
+  "uniqueDependencies": [],
   "uniqueOptions": []
 }
