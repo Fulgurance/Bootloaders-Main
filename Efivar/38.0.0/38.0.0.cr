@@ -3,7 +3,7 @@ class Target < ISM::Software
     def prepare
         super
 
-        fileReplaceTextAtLineNumber("#{buildDirectoryPath(false)}src/Makefile","\n","\ttouch prep\n",87)
+        fileReplaceTextAtLineNumber("#{buildDirectoryPath}src/Makefile","\n","\ttouch prep\n",87)
     end
 
     def build

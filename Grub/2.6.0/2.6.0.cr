@@ -22,8 +22,8 @@ class Target < ISM::Software
         super
 
         makeSource(["DESTDIR=#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}","install"],buildDirectoryPath)
-        makeDirectory("#{builtSoftwareDirectoryPath(false)}#{Ism.settings.rootPath}usr/share/bash-completion/completions")
-        moveFile("#{builtSoftwareDirectoryPath(false)}#{Ism.settings.rootPath}etc/bash_completion.d/grub","#{builtSoftwareDirectoryPath(false)}#{Ism.settings.rootPath}usr/share/bash-completion/completions/grub")
+        makeDirectory("#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}usr/share/bash-completion/completions")
+        moveFile("#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}etc/bash_completion.d/grub","#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}usr/share/bash-completion/completions/grub")
     end
 
 end

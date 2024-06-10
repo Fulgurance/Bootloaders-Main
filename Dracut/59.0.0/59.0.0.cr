@@ -25,7 +25,7 @@ class Target < ISM::Software
         hostonly="yes"
         install_items+=" /lib/elogind/elogind-uaccess-command /usr/lib/libgcc_s.so.1"
         CODE
-        fileWriteData("#{builtSoftwareDirectoryPath(false)}#{Ism.settings.rootPath}/etc/dracut.conf",dracutconfData)
+        fileWriteData("#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}/etc/dracut.conf",dracutconfData)
     end
 
 end
