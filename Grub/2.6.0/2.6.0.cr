@@ -3,13 +3,13 @@ class Target < ISM::Software
     def configure
         super
 
-        configureSource([   "--prefix=/usr",
-                            "--sysconfdir=/etc",
-                            "--disable-efiemu",
-                            option("FreeType") ? "--enable-grub-mkfont" : "",
-                            option("Efibootmgr") ? "--with-platform=efi" : "",
-                            "--disable-werror"],
-                            buildDirectoryPath)
+        configureSource(arguments:  "--prefix=/usr                                          \
+                                    --sysconfdir=/etc                                       \
+                                    --disable-efiemu                                        \
+                                    #{option("FreeType") ? "--enable-grub-mkfont" : ""}     \
+                                    #{option("Efibootmgr") ? "--with-platform=efi" : ""}    \
+                                    --disable-werror",
+                        path:       buildDirectoryPath)
     end
     
     def build
@@ -21,9 +21,13 @@ class Target < ISM::Software
     def prepareInstallation
         super
 
-        makeSource(["DESTDIR=#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}","install"],buildDirectoryPath)
+        makeSource( arguments:  "DESTDIR=#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath} install",
+                    path:       buildDirectoryPath)
+
         makeDirectory("#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}usr/share/bash-completion/completions")
-        moveFile("#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}etc/bash_completion.d/grub","#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}usr/share/bash-completion/completions/grub")
+
+        moveFile(   "#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}etc/bash_completion.d/grub",
+                    "#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}usr/share/bash-completion/completions/grub")
     end
 
 end

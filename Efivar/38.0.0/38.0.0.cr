@@ -3,19 +3,24 @@ class Target < ISM::Software
     def prepare
         super
 
-        fileReplaceTextAtLineNumber("#{buildDirectoryPath}src/Makefile","\n","\ttouch prep\n",87)
+        fileReplaceTextAtLineNumber(path:       "#{buildDirectoryPath}src/Makefile",
+                                    text:       "\n",
+                                    newText:    "\ttouch prep\n",
+                                    lineNumber: 87)
     end
 
     def build
         super
 
-        makeSource(["ERRORS="],buildDirectoryPath)
+        makeSource( arguments: "ERRORS=",
+                    path:       buildDirectoryPath)
     end
     
     def prepareInstallation
         super
 
-        makeSource(["DESTDIR=#{builtSoftwareDirectoryPath}/#{Ism.settings.rootPath}","install", "LIBDIR=/usr/lib"],buildDirectoryPath)
+        makeSource( arguments:  "DESTDIR=#{builtSoftwareDirectoryPath}/#{Ism.settings.rootPath} install LIBDIR=/usr/lib",
+                    path:       buildDirectoryPath)
     end
 
 end
