@@ -5,7 +5,7 @@ class Target < ISM::Software
 
         fileReplaceTextAtLineNumber(path:       "#{buildDirectoryPath}src/Makefile",
                                     text:       "\n",
-                                    newText:    "\ttouch prep\n",
+                                    newText:    "\ttouch\sprep\n",
                                     lineNumber: 87)
     end
 
