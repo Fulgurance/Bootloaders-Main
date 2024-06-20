@@ -1,14 +1,5 @@
 class Target < ISM::Software
 
-    def prepare
-        super
-
-        fileReplaceTextAtLineNumber(path:       "#{buildDirectoryPath}src/Makefile",
-                                    text:       "\n",
-                                    newText:    "\ttouch\sprep\n",
-                                    lineNumber: 87)
-    end
-
     def build
         super
 
