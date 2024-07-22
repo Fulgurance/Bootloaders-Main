@@ -3,7 +3,7 @@ class Target < ISM::Software
     def build
         super
 
-        makeSource( arguments:  "EFIDIR=#{Ism.settings.systemName} EFI_LOADER=grubx64.efi",
+        makeSource( arguments:  "EFIDIR=\"#{Ism.settings.systemName}\" EFI_LOADER=grubx64.efi",
                     path:       buildDirectoryPath)
     end
     
