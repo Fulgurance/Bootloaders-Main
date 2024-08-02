@@ -6,7 +6,7 @@ class Target < ISM::Software
         configureSource(arguments:  "--prefix=/usr          \
                                     --sysconfdir=/etc       \
                                     --disable-documentation \
-                                    --systemdsystemunitdir=no"],
+                                    --systemdsystemunitdir=no",
                         path:       buildDirectoryPath)
     end
     
@@ -24,7 +24,7 @@ class Target < ISM::Software
 
         dracutconfData = <<-CODE
         hostonly="yes"
-        install_items+=" /lib/elogind/elogind-uaccess-command /usr/lib/libgcc_s.so.1"
+        install_items+=" /lib/elogind/elogind-uaccess-command /usr/lib/libgcc_s.so.1 "
         CODE
         fileWriteData("#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}/etc/dracut.conf",dracutconfData)
     end
