@@ -1,0 +1,23 @@
+{
+  "port": "Bootloaders-Main",
+  "name": "Plymouth",
+  "version": "24.4.6",
+  "architectures": ["x86_64"],
+  "description": "Boot splash and boot logger",
+  "website": "https://gitlab.freedesktop.org/plymouth/plymouth",
+  "installedFiles": [],
+  "dependencies": [
+    {
+      "port": "SystemBase-Main",
+      "name": "SystemBase",
+      "version": ">=0.2.0",
+      "options": []
+    }
+  ],
+  "kernelDependencies": [],
+  "options": [],
+  "uniqueDependencies": [],
+  "uniqueOptions": [],
+  "selectedDependencies": [],
+  "allowCodependencies": []
+}
