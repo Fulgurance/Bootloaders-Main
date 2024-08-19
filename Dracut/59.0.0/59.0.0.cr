@@ -22,6 +22,8 @@ class Target < ISM::Software
         makeSource( arguments:  "DESTDIR=#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath} install",
                     path:       buildDirectoryPath)
 
+        deleteDirectory("#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}no")
+
         dracutconfData = <<-CODE
         hostonly="yes"
         install_items+=" /lib/elogind/elogind-uaccess-command /usr/lib/libgcc_s.so.1 "
