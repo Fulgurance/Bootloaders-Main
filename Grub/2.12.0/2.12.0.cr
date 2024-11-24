@@ -30,4 +30,9 @@ class Target < ISM::Software
                     "#{builtSoftwareDirectoryPath}#{Ism.settings.rootPath}usr/share/bash-completion/completions/grub")
     end
 
+    def install
+        #Avoid unusable grub
+        super(stripFiles: false)
+    end
+
 end
