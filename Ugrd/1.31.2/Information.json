@@ -1,0 +1,23 @@
+{
+  "port": "Bootloaders-Main",
+  "name": "Ugrd",
+  "version": "1.31.2",
+  "architectures": ["x86_64"],
+  "description": "A minimalistic POSIX initramfs generator, designed for FDE",
+  "website": "https://github.com/desultory/ugrd",
+  "installedFiles": [],
+  "dependencies": [
+    {
+      "port": "ProgrammingTools-Main",
+      "name": "Setuptools",
+      "version": ">=75.3.0",
+      "options": []
+    }
+  ],
+  "kernelDependencies": [],
+  "options": [],
+  "uniqueDependencies": [],
+  "uniqueOptions": [],
+  "selectedDependencies": [],
+  "allowCodependencies": []
+}
