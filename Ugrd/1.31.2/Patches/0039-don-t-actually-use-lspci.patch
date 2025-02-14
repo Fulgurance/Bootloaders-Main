@@ -1,0 +1,60 @@
+From 280e4d6a73c0215536f16f4b8ea3816d929cb476 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sun, 9 Feb 2025 11:12:47 -0600
+Subject: [PATCH 39/47] don't actually use lspci
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/kmod/kmod.py | 30 +++++++++++++-----------------
+ 1 file changed, 13 insertions(+), 17 deletions(-)
+
+diff --git a/src/ugrd/kmod/kmod.py b/src/ugrd/kmod/kmod.py
+index b89a2d1..61e26f9 100644
+--- a/src/ugrd/kmod/kmod.py
++++ b/src/ugrd/kmod/kmod.py
+@@ -1,5 +1,5 @@
+ __author__ = "desultory"
+-__version__ = "3.2.3"
++__version__ = "3.3.0"
+ 
+ from pathlib import Path
+ from platform import uname
+@@ -93,23 +93,19 @@ def _get_kmod_info(self, module: str):
+ 
+ @contains("kmod_autodetect_lspci", "kmod_autodetect_lspci is not enabled, skipping.")
+ def _autodetect_modules_lspci(self) -> None:
+-    """Gets the name of all kernel modules being used by hardware visible in lspci -k."""
+-    try:
+-        cmd = self._run(["lspci", "-k"])
+-    except RuntimeError as e:
+-        raise DependencyResolutionError("Failed to get list of kernel modules") from e
++    """Uses /sys/bus/pci/drivers to get a list of all kernel modules.
++    Similar to lspci -k."""
+     lspci_kmods = set()
+-    # Iterate over all output lines
+-    for line in cmd.stdout.decode("utf-8").split("\n"):
+-        # If the line contains the string 'Kernel modules:' or 'Kernel driver in use:', it contains the name of a kernel module
+-        if "Kernel modules:" in line or "Kernel driver in use:" in line:
+-            module = line.split(":")[1]
+-            if "," in module:
+-                # If there are multiple modules, split them and add them to the module set
+-                for module in module.split(","):
+-                    lspci_kmods.add(module.strip())
+-            else:
+-                lspci_kmods.add(module.strip())
++    for driver in Path('/sys/bus/pci/drivers').iterdir():
++        if not driver.is_dir():
++            self.logger.debug("Skipping non-directory: %s" % driver)
++            continue
++        module = driver / "module"
++        if not module.exists():
++            self.logger.debug("Skipping driver without module: %s" % driver)
++            continue
++        lspci_kmods.add(module.resolve().name)
++        self.logger.debug("[%s] Autodetected kernel module: %s" % (driver, module.resolve().name))
+ 
+     self["_kmod_auto"] = list(lspci_kmods)
+ 
+-- 
+2.48.1
+

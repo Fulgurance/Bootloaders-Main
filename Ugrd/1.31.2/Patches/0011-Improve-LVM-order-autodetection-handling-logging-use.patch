@@ -1,7 +1,7 @@
 From f2c70bdd5f879d6d2c43063e17a9ad1aa17dd11f Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 25 Jan 2025 14:34:32 -0600
-Subject: [PATCH 11/34] Improve LVM order autodetection handling, logging, use
+Subject: [PATCH 11/47] Improve LVM order autodetection handling, logging, use
  import_order
 
 Signed-off-by: Zen <z@pyl.onl>

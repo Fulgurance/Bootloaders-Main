@@ -1,7 +1,7 @@
 From 625c03b80c483015a6864aead0e786ef46f19f57 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 25 Jan 2025 12:10:45 -0600
-Subject: [PATCH 03/34] add before/after hook implementation
+Subject: [PATCH 03/47] add before/after hook implementation
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

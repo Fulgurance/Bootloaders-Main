@@ -1,0 +1,95 @@
+From 000a0f5afe66900814d6eaa2c253b49323a49a17 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sun, 9 Feb 2025 17:34:10 -0600
+Subject: [PATCH 45/47] improve build logging
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/core.py           |  5 ++++-
+ src/ugrd/generator_helpers.py   | 12 ++++++++----
+ src/ugrd/initramfs_generator.py |  4 +++-
+ 3 files changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/src/ugrd/base/core.py b/src/ugrd/base/core.py
+index 9b44e87..9c804c0 100644
+--- a/src/ugrd/base/core.py
++++ b/src/ugrd/base/core.py
+@@ -427,12 +427,15 @@ def _process_gz_dependencies_multi(self, dependency: Union[Path, str]) -> None:
+ def _process_build_logging(self, log_build: bool) -> None:
+     """Sets the build log flag."""
+     build_log_level = self.get("_build_log_level", 10)
++    if log_build == self["build_logging"]:
++        # Don't re-run the setup procedure as it will bump the log level again when args are re-processed
++        return self.logger.debug("Build logging is already set to: %s" % log_build)
+     if log_build:
+         self["_build_log_level"] = max(build_log_level + 10, 20)
+     else:
+         if self["_build_log_level"] > 10:
+             self.logger.warning("Resetting _build_log_level to 10, as build logging is disabled.")
+-        self["_build_log_level"] = 10
++            self["_build_log_level"] = 10
+     self.data["build_logging"] = log_build
+ 
+ 
+diff --git a/src/ugrd/generator_helpers.py b/src/ugrd/generator_helpers.py
+index 7fc910c..a3b13fc 100644
+--- a/src/ugrd/generator_helpers.py
++++ b/src/ugrd/generator_helpers.py
+@@ -6,7 +6,7 @@ from uuid import uuid4
+ 
+ from zenlib.util import colorize, pretty_print
+ 
+-__version__ = "1.6.2"
++__version__ = "1.6.3"
+ __author__ = "desultory"
+ 
+ 
+@@ -71,7 +71,7 @@ class GeneratorHelpers:
+ 
+         if not path_dir.is_dir():
+             path_dir.mkdir()
+-            self.logger.log(self["_build_log_level"], "Created directory: %s" % path)
++            self.logger.log(self["_build_log_level"], "Created directory: %s" % colorize(path, "green"))
+         else:
+             self.logger.debug("Directory already exists: %s" % path_dir)
+ 
+@@ -156,7 +156,9 @@ class GeneratorHelpers:
+         except ValueError as e:
+             raise RuntimeError("Destination path is not within the build directory: %s" % dest_path) from e
+ 
+-        self.logger.log(self["_build_log_level"], "Copying '%s' to '%s'" % (source, dest_path))
++        self.logger.log(
++            self["_build_log_level"], "Copying '%s' to '%s'" % (colorize(source, "blue"), colorize(dest_path, "green"))
++        )
+         copy2(source, dest_path)
+ 
+     def _symlink(self, source: Union[Path, str], target: Union[Path, str]) -> None:
+@@ -200,7 +202,9 @@ class GeneratorHelpers:
+         if target.relative_to(self._get_build_path("/")) == source:
+             return self.logger.debug("Cannot symlink to self: %s -> %s" % (target, source))
+ 
+-        self.logger.debug("Creating symlink: %s -> %s" % (target, source))
++        self.logger.log(
++            self["_build_log_level"], "Creating symlink: %s -> %s" % (colorize(target, "green"), colorize(source, "blue"))
++        )
+         target.symlink_to(source)
+ 
+     def _run(self, args: list[str], timeout=None, fail_silent=False, fail_hard=True) -> CompletedProcess:
+diff --git a/src/ugrd/initramfs_generator.py b/src/ugrd/initramfs_generator.py
+index 4e9ca0e..6e5a049 100644
+--- a/src/ugrd/initramfs_generator.py
++++ b/src/ugrd/initramfs_generator.py
+@@ -98,7 +98,9 @@ class InitramfsGenerator(GeneratorHelpers):
+         If force_include is set, forces the function to be included in the shell profile.
+         if force_exclude is set, does not include the output of the function in the shell profile.
+         """
+-        self.logger.log(self["_build_log_level"], "Running function: %s" % function.__name__)
++        self.logger.log(
++            self["_build_log_level"], "Running function: %s" % colorize(function.__name__, "blue", bold=True)
++        )
+ 
+         if function_output := function(self):
+             if isinstance(function_output, list) and len(function_output) == 1:
+-- 
+2.48.1
+

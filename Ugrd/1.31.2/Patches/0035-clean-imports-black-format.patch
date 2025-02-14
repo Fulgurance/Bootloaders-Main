@@ -1,0 +1,246 @@
+From fcbbb98f7480c13caab8a74eb77a03e50a50530f Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Thu, 6 Feb 2025 18:22:51 -0600
+Subject: [PATCH 35/47] clean imports, black format
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/cmdline.py        | 6 +++---
+ src/ugrd/base/keymap.py         | 5 +++--
+ src/ugrd/crypto/cryptsetup.py   | 9 +++------
+ src/ugrd/fs/mounts.py           | 4 ++--
+ src/ugrd/fs/test_image.py       | 8 ++++----
+ src/ugrd/initramfs_dict.py      | 5 ++---
+ src/ugrd/initramfs_generator.py | 5 +----
+ src/ugrd/kmod/kmod.py           | 8 +++-----
+ 8 files changed, 21 insertions(+), 29 deletions(-)
+
+diff --git a/src/ugrd/base/cmdline.py b/src/ugrd/base/cmdline.py
+index 2c6faa3..df9f2d6 100644
+--- a/src/ugrd/base/cmdline.py
++++ b/src/ugrd/base/cmdline.py
+@@ -1,5 +1,7 @@
+ __author__ = "desultory"
+-__version__ = "3.1.0"
++__version__ = "3.1.1"
++
++from importlib.metadata import PackageNotFoundError, version
+ 
+ 
+ def parse_cmdline_bool(self) -> str:
+@@ -46,8 +48,6 @@ def export_exports(self) -> list[str]:
+     Sets 'exported' to 1 once done.
+     If 'exported' is set, returns early.
+     """
+-    from importlib.metadata import PackageNotFoundError, version
+-
+     try:
+         self["exports"]["VERSION"] = version(__package__.split(".")[0])
+     except PackageNotFoundError:
+diff --git a/src/ugrd/base/keymap.py b/src/ugrd/base/keymap.py
+index 617e4ed..bffd2ac 100644
+--- a/src/ugrd/base/keymap.py
++++ b/src/ugrd/base/keymap.py
+@@ -1,5 +1,7 @@
+ __author__ = "desultory"
+-__version__ = "1.0.0"
++__version__ = "1.0.1"
++
++from pathlib import Path
+ 
+ from zenlib.util import contains
+ 
+@@ -12,7 +14,6 @@ def _find_keymap_include(self, base_path, included_file, no_recurse=False) -> st
+     Stopping at the 'keymaps' directory, if not found, recursively searches the parent directory.
+     Keeps recursively searching if the included file does not end with '.inc'.
+     """
+-    from pathlib import Path
+ 
+     if not isinstance(base_path, Path):
+         base_path = Path(base_path)
+diff --git a/src/ugrd/crypto/cryptsetup.py b/src/ugrd/crypto/cryptsetup.py
+index b2ad17c..15f4bc9 100644
+--- a/src/ugrd/crypto/cryptsetup.py
++++ b/src/ugrd/crypto/cryptsetup.py
+@@ -1,7 +1,10 @@
+ __author__ = "desultory"
+ __version__ = "4.0.4"
+ 
++from json import loads
+ from pathlib import Path
++from re import search
++from textwrap import dedent
+ 
+ from ugrd import AutodetectError, ValidationError
+ from zenlib.util import colorize, contains, unset
+@@ -161,8 +164,6 @@ def _get_dm_slave_info(self, device_info: dict) -> (str, dict):
+ 
+ def _read_cryptsetup_header(self, mapped_name: str, slave_device: str = None) -> dict:
+     """Reads LUKS header information from a device or header file into a dict"""
+-    from json import loads
+-
+     header_file = self["cryptsetup"][mapped_name].get("header_file")
+     if not header_file:
+         if slave_device:
+@@ -292,8 +293,6 @@ def _validate_cryptsetup_device(self, mapped_name) -> None:
+ @unset("_cryptsetup_backend")
+ def detect_cryptsetup_backend(self) -> None:
+     """Determines the cryptsetup backend by running 'cryptsetup --debug luksDump' on this file"""
+-    from re import search
+-
+     try:
+         raw_luks_info = (
+             self._run(["cryptsetup", "--debug", "luksDump", __file__], fail_silent=True, fail_hard=False)
+@@ -487,8 +486,6 @@ def open_crypt_dev(self) -> str:
+ 
+ def _open_crypt_dev(self, name: str, parameters: dict) -> list[str]:
+     """Generates a loop to open a cryptsetup device with the given parameters."""
+-    from textwrap import dedent
+-
+     retries = parameters.get("retries", self["cryptsetup_retries"])
+     out = [
+         f"einfo 'Opening cryptsetup device: {name}'",
+diff --git a/src/ugrd/fs/mounts.py b/src/ugrd/fs/mounts.py
+index 31dfbda..02ea90f 100644
+--- a/src/ugrd/fs/mounts.py
++++ b/src/ugrd/fs/mounts.py
+@@ -1,7 +1,8 @@
+ __author__ = "desultory"
+-__version__ = "6.6.1"
++__version__ = "6.6.2"
+ 
+ from pathlib import Path
++from re import search
+ from typing import Union
+ 
+ from ugrd import AutodetectError, ValidationError
+@@ -315,7 +316,6 @@ def get_blkid_info(self, device=None) -> dict:
+     """Gets the blkid info for all devices if no device is passed.
+     Gets the blkid info for the passed device if a device is passed.
+     The info is stored in self['_blkid_info']."""
+-    from re import search
+ 
+     try:
+         if device:
+diff --git a/src/ugrd/fs/test_image.py b/src/ugrd/fs/test_image.py
+index a219459..d6b07be 100644
+--- a/src/ugrd/fs/test_image.py
++++ b/src/ugrd/fs/test_image.py
+@@ -1,4 +1,6 @@
+-__version__ = "1.2.1"
++__version__ = "1.2.2"
++
++from tempfile import TemporaryDirectory
+ 
+ from zenlib.util import colorize, contains
+ 
+@@ -103,8 +105,6 @@ def make_test_image(self):
+     elif rootfs_type == "xfs":
+         self._run(["mkfs", "-t", rootfs_type, "-m", "uuid=%s" % rootfs_uuid, image_path])
+         try:  # XFS doesn't support importing a directory as a filesystem, it must be mounted
+-            from tempfile import TemporaryDirectory
+-
+             with TemporaryDirectory() as tmp_dir:
+                 self._run(["mount", image_path, tmp_dir])
+                 self._run(["cp", "-a", f"{build_dir}/.", tmp_dir])
+@@ -113,7 +113,7 @@ def make_test_image(self):
+             raise RuntimeError("Could not mount the XFS test image: %s", e)
+     elif rootfs_type == "squashfs":
+         # First, make the inner squashfs image
+-        squashfs_image = self._get_out_path(f'squash/{self["squashfs_image"]}')
++        squashfs_image = self._get_out_path(f"squash/{self['squashfs_image']}")
+         if squashfs_image.exists():
+             if self.clean:
+                 self.logger.warning("Removing existing squashfs image file: %s" % colorize(squashfs_image, "red"))
+diff --git a/src/ugrd/initramfs_dict.py b/src/ugrd/initramfs_dict.py
+index 9556165..9da8d51 100644
+--- a/src/ugrd/initramfs_dict.py
++++ b/src/ugrd/initramfs_dict.py
+@@ -1,5 +1,5 @@
+ __author__ = "desultory"
+-__version__ = "2.3.3"
++__version__ = "2.3.4"
+ 
+ from collections import UserDict
+ from importlib import import_module
+@@ -9,6 +9,7 @@ from queue import Queue
+ from tomllib import TOMLDecodeError, load
+ from typing import Callable
+ 
++from pycpio import PyCPIO
+ from zenlib.logging import loggify
+ from zenlib.types import NoDupFlatList
+ from zenlib.util import colorize, handle_plural, pretty_print
+@@ -151,8 +152,6 @@ class InitramfsConfigDict(UserDict):
+         Updates the custom_parameters attribute.
+         Sets the initial value of the parameter based on the type.
+         """
+-        from pycpio import PyCPIO
+-
+         if isinstance(parameter_type, str):
+             parameter_type = eval(parameter_type)
+ 
+diff --git a/src/ugrd/initramfs_generator.py b/src/ugrd/initramfs_generator.py
+index 63ec50d..4e9ca0e 100644
+--- a/src/ugrd/initramfs_generator.py
++++ b/src/ugrd/initramfs_generator.py
+@@ -1,4 +1,5 @@
+ from importlib.metadata import version
++from textwrap import dedent
+ from tomllib import TOMLDecodeError, load
+ 
+ from zenlib.logging import loggify
+@@ -114,8 +115,6 @@ class InitramfsGenerator(GeneratorHelpers):
+                 return function_output
+ 
+             if isinstance(function_output, str) and "\n" in function_output:
+-                from textwrap import dedent
+-
+                 function_output = dedent(function_output)
+                 function_output = [  # If the output string has a newline, split and get rid of empty lines
+                     line for line in function_output.split("\n") if line and line != "\n" and not line.isspace()
+@@ -241,8 +240,6 @@ class InitramfsGenerator(GeneratorHelpers):
+ 
+     def generate_profile(self) -> list[str]:
+         """Generates the shell profile file based on self.included_functions."""
+-        from importlib.metadata import version
+-
+         ver = version(__package__) or 9999  # Version won't be found unless the package is installed
+         out = [
+             self["shebang"].split(" ")[0],  # Don't add arguments to the shebang (for the profile)
+diff --git a/src/ugrd/kmod/kmod.py b/src/ugrd/kmod/kmod.py
+index 0d3671e..b89a2d1 100644
+--- a/src/ugrd/kmod/kmod.py
++++ b/src/ugrd/kmod/kmod.py
+@@ -1,7 +1,9 @@
+ __author__ = "desultory"
+-__version__ = "3.2.2"
++__version__ = "3.2.3"
+ 
+ from pathlib import Path
++from platform import uname
++from struct import unpack
+ from subprocess import run
+ 
+ from ugrd.kmod import BuiltinModuleError, DependencyResolutionError, IgnoredModuleError, _normalize_kmod_name
+@@ -115,8 +117,6 @@ def _autodetect_modules_lspci(self) -> None:
+ @contains("kmod_autodetect_lsmod", "kmod_autodetect_lsmod is not enabled, skipping.")
+ def _autodetect_modules_lsmod(self) -> None:
+     """Gets the name of all currently used kernel modules."""
+-    from platform import uname
+-
+     if self.get("kernel_version") and self["kernel_version"] != uname().release:
+         self.logger.warning(
+             "Kernel version is set to %s, but the current kernel version is %s"
+@@ -181,8 +181,6 @@ def _get_kver_from_header(self) -> str:
+     The version string can be up to 127 bytes long and is null-terminated.
+     https://www.kernel.org/doc/html/v6.7/arch/x86/boot.html#the-real-mode-kernel-header
+     """
+-    from struct import unpack
+-
+     kernel_path = _find_kernel_image(self)
+     kver_offset = unpack("<h", kernel_path.read_bytes()[0x020E:0x0210])[0] + 512
+     header = kernel_path.read_bytes()[kver_offset : kver_offset + 127]
+-- 
+2.48.1
+

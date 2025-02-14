@@ -1,0 +1,46 @@
+From d7bd987c3b8cb2040a8647762f4281848700ed66 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Thu, 6 Feb 2025 18:56:53 -0600
+Subject: [PATCH 46/47] update docs for zfs module
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ docs/configuration.md | 2 ++
+ readme.md             | 1 +
+ 2 files changed, 3 insertions(+)
+
+diff --git a/docs/configuration.md b/docs/configuration.md
+index 0857a7f..57a7571 100644
+--- a/docs/configuration.md
++++ b/docs/configuration.md
+@@ -194,6 +194,7 @@ These bools simply import `ugrd.kmod.no<category>` modules during `build_pre`.
+ 
+ Additional modules include:
+ 
++* `ugrd.fs.bcachefs` - Adds the bcachefs module and binary for mounting.
+ * `ugrd.fs.btrfs` - Helps with multi-device BTRFS mounts, subvolume selection.
+ * `ugrd.fs.fakeudev` - Makes 'fake' udev entries for DM devices.
+ * `ugrd.fs.cpio` - Packs the build dir into a CPIO archive with PyCPIO.
+@@ -202,6 +203,7 @@ Additional modules include:
+ * `ugrd.fs.mdraid` - For MDRAID mounts.
+ * `ugrd.fs.resume` - Handles resume from hibernation.
+ * `ugrd.fs.test_image` - Creates a test rootfs for automated testing.
++* `ugrd.fs.zfs` - Adds basic ZFS support.
+ 
+ #### ugrd.fs.mounts
+ 
+diff --git a/readme.md b/readme.md
+index 47ca82d..4baee9c 100644
+--- a/readme.md
++++ b/readme.md
+@@ -103,6 +103,7 @@ The following root filesystems have been tested:
+ The following filesystems have limited support:
+ 
+ * BCACHEFS
++* ZFS
+ 
+ Additionally, the following filesystems have been tested for non-root mounts:
+ 
+-- 
+2.48.1
+

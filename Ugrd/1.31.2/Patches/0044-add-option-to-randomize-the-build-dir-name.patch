@@ -1,0 +1,92 @@
+From b115ef53be21c68f585e343b085fc947516b63f0 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sun, 9 Feb 2025 16:58:13 -0600
+Subject: [PATCH 44/47] add option to randomize the build dir name
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ docs/configuration.md              |  1 +
+ src/ugrd/base/core.toml            |  1 +
+ src/ugrd/generator_helpers.py      | 15 ++++++++++++---
+ tests/cryptsetup_included_key.toml |  2 ++
+ 4 files changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/docs/configuration.md b/docs/configuration.md
+index 0857a7f..c880a01 100644
+--- a/docs/configuration.md
++++ b/docs/configuration.md
+@@ -39,6 +39,7 @@ Modules write to a shared config dict that is accessible by other modules.
+ * `validate` (true) adds additional checks to verify the initramfs will work on the build host.
+ * `tmpdir` (/tmp) Sets the temporary directory as the base for the build and out dir.
+ * `build_dir` (initramfs_build) If relative, it will be placed under `tmpdir`, defines the build directory.
++* `random_build_dir` (false) Adds a uuid to the end of the build fir name when true.
+ * `build_logging` (false) Enables additional logging during the build process.
+ * `make_nodes` (false) Create real device nodes in the build dir. 
+ * `find_libgcc` (true) Automatically locates libgcc using ldconfig -p and adds it to the initramfs.
+diff --git a/src/ugrd/base/core.toml b/src/ugrd/base/core.toml
+index 41fc815..35ebecc 100644
+--- a/src/ugrd/base/core.toml
++++ b/src/ugrd/base/core.toml
+@@ -54,6 +54,7 @@ timeout = "int"  # The timeout for _run commands, defaults to 15 seconds
+ _custom_init_file = "str"  # Add the _custom_init_file propety, used to set where the custom init file is located
+ tmpdir = "Path"  # The base directory for builds
+ build_dir = "Path"  # The directory where the initramfs is built
++random_build_dir = "bool"  # If true, a random build directory will be used
+ build_logging = "bool" # If true, additional build information will be logged to the console
+ _build_log_level = "int"  # The level of logging to use for the build log, set to 10 by default and incremeted by if build_log is true (min 20)
+ symlinks = "dict"  # Symlinks dict, defines the symlinks to be made in the initramfs
+diff --git a/src/ugrd/generator_helpers.py b/src/ugrd/generator_helpers.py
+index 9e2dc39..7fc910c 100644
+--- a/src/ugrd/generator_helpers.py
++++ b/src/ugrd/generator_helpers.py
+@@ -2,13 +2,17 @@ from pathlib import Path
+ from shutil import copy2
+ from subprocess import CompletedProcess, TimeoutExpired, run
+ from typing import Union
++from uuid import uuid4
+ 
+ from zenlib.util import colorize, pretty_print
+ 
+-__version__ = "1.6.1"
++__version__ = "1.6.2"
+ __author__ = "desultory"
+ 
+ 
++_RANDOM_BUILD_ID = str(uuid4())
++
++
+ def get_subpath(path: Path, subpath: Union[Path, str]) -> Path:
+     """Returns the subpath of a path."""
+     if not isinstance(subpath, Path):
+@@ -33,8 +37,13 @@ class GeneratorHelpers:
+         return get_subpath(get_subpath(self.tmpdir, self.out_dir), path)
+ 
+     def _get_build_path(self, path: Union[Path, str]) -> Path:
+-        """Returns the path relative to the build directory, under the tmpdir."""
+-        return get_subpath(get_subpath(self.tmpdir, self.build_dir), path)
++        """Returns the path relative to the build directory, under the tmpdir.
++        if random_build_dir is true, appends a uuid4() to the build directory."""
++        if self.random_build_dir:
++            build_dir = self.build_dir.with_name(self.build_dir.name + "-" + _RANDOM_BUILD_ID)
++        else:
++            build_dir = self.build_dir
++        return get_subpath(get_subpath(self.tmpdir, build_dir), path)
+ 
+     def _mkdir(self, path: Path, resolve_build=True) -> None:
+         """
+diff --git a/tests/cryptsetup_included_key.toml b/tests/cryptsetup_included_key.toml
+index 6ef63d8..225c051 100644
+--- a/tests/cryptsetup_included_key.toml
++++ b/tests/cryptsetup_included_key.toml
+@@ -9,6 +9,8 @@ modules = [
+ out_dir = "initramfs_test"
+ test_memory = '2G'
+ 
++random_build_dir = true
++
+ #kernel_version = "6.6.35-gentoo-dist"
+ #test_kernel = "/boot/vmlinuz-6.6.35-gentoo-dist"
+ cpio_compression = false
+-- 
+2.48.1
+

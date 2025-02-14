@@ -1,7 +1,7 @@
 From 11b975718f4e1a9ceef9b11be252e479d54e8f0f Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Tue, 4 Feb 2025 17:03:46 -0600
-Subject: [PATCH 01/34] kmod: mask i915 by default
+Subject: [PATCH 01/47] kmod: mask i915 by default
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

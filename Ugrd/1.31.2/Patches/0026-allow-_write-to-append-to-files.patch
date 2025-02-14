@@ -1,7 +1,7 @@
 From e155925973749d1f83153f2b273ec39ed9708691 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sun, 2 Feb 2025 10:58:41 -0600
-Subject: [PATCH 26/34] allow _write to append to files
+Subject: [PATCH 26/47] allow _write to append to files
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

@@ -1,0 +1,32 @@
+From f4c1b24120fa5c8c3473798f610e29f68c0cbaa3 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Fri, 14 Feb 2025 15:39:33 -0600
+Subject: [PATCH 47/47] remove duplicate/unused code
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/base.py | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/src/ugrd/base/base.py b/src/ugrd/base/base.py
+index c7da63f..6a8f57c 100644
+--- a/src/ugrd/base/base.py
++++ b/src/ugrd/base/base.py
+@@ -31,14 +31,6 @@ def _process_loglevel(self, loglevel: int) -> None:
+     self["exports"]["loglevel"] = loglevel
+ 
+ 
+-def _get_shell_path(self, shell_name) -> Path:
+-    """Gets the real path to the shell binary."""
+-    if shell := which(shell_name):
+-        return Path(shell).resolve()
+-    else:
+-        raise AutodetectError(f"Shell '{shell_name}' not found.")
+-
+-
+ @contains("hostonly", "Skipping init_target autodetection, hostonly is not set.", log_level=30)
+ @contains("autodetect_init", log_level=30)
+ @unset("init_target", "init_target is already set, skipping autodetection.", log_level=30)
+-- 
+2.48.1
+
