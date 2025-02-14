@@ -1,67 +1,58 @@
-From 4aca27d77991609bfbe6bed21555550478ff702e Mon Sep 17 00:00:00 2001
+From 94b84ffad3d494239ceeaf0f53e020f6b104dd0f Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Fri, 14 Feb 2025 16:32:43 -0600
 Subject: [PATCH 2/2] detect and add binary search paths
 
 Signed-off-by: Zen <z@pyl.onl>
 ---
- src/ugrd/base/core.py           | 20 ++++++++++++++++++++
- src/ugrd/base/core.toml         |  3 +++
- src/ugrd/initramfs_generator.py |  5 +++++
- 3 files changed, 28 insertions(+)
+ docs/configuration.md           | 2 ++
+ src/ugrd/base/core.py           | 2 +-
+ src/ugrd/base/core.toml         | 4 +++-
+ src/ugrd/initramfs_generator.py | 5 +++++
+ 4 files changed, 11 insertions(+), 2 deletions(-)
 
+diff --git a/docs/configuration.md b/docs/configuration.md
+index c880a01..0de7213 100644
+--- a/docs/configuration.md
++++ b/docs/configuration.md
+@@ -48,7 +48,9 @@ Modules write to a shared config dict that is accessible by other modules.
+ * `clean` (true) forces the build dir to be cleaned on each run.
+ * `old_count` (1) Sets the number of old file to keep when running the `_rotate_old` function.
+ * `binaries` - A list used to define programs to be pulled into the initrams. `which` is used to find the path of added entries, and `lddtree` is used to resolve dependendies.
++* `binary_search_paths` ("/bin", "/sbin", "/usr/bin", "/usr/sbin") - Paths to search for binaries, automatically updated when binaries are added.
+ * `libraries` - A list of libaries searched for and added to the initramfs, by name.
++* `library_paths` ("/lib", /lib64") - Paths to search for libraries, automatically updated when libraries are added.
+ * `paths` - A list of directores to create in the `build_dir`. They do not need a leading `/`.
+ * `shell` (/bin/sh) Sets the shell to be used in the init script.
+ 
 diff --git a/src/ugrd/base/core.py b/src/ugrd/base/core.py
-index 36ca1a6..926cd86 100644
+index 36ca1a6..5de778a 100644
 --- a/src/ugrd/base/core.py
 +++ b/src/ugrd/base/core.py
-@@ -350,6 +350,26 @@ def _process_binaries_multi(self, binary: str) -> None:
+@@ -350,7 +350,7 @@ def _process_binaries_multi(self, binary: str) -> None:
  
      self.logger.debug("Adding binary: %s" % binary)
      self["binaries"].append(binary)
-+    self["binary_search_paths"] = dependencies[0].parent  # Add the binary path to the search paths
-+
-+def _process_binary_search_paths_multi(self, search_path: Path) -> None:
-+    """ Adds a binary search path to the binary search paths list. """
-+    search_path = Path(search_path)
-+
-+    if str(search_path) in self["binary_search_paths"]:
-+        return self.logger.debug("Binary search path already in list, skipping: %s" % search_path)
-+
-+    while search_path.is_symlink():  # Resolve symlinks
-+        search_path = search_path.resolve()
-+
-+    if not search_path.is_dir():  # If the path is not a directory, use the parent directory
-+        search_path = search_path.parent
-+
-+    if str(search_path) in self["binary_search_paths"]:  # Check again after resolving symlinks
-+        return self.logger.debug("Binary search path already in list, skipping: %s" % search_path)
-+
-+    self.logger.info("Adding binary search path: %s" % search_path)
-+    self.data["binary_search_paths"].append(str(search_path))
- 
+-
++    self["binary_search_paths"] = str(dependencies[0].parent)  # Add the binary path to the search paths
  
  def _validate_dependency(self, dependency: Union[Path, str]) -> None:
+     """Performas basic validation and normalization for dependencies."""
 diff --git a/src/ugrd/base/core.toml b/src/ugrd/base/core.toml
-index 35ebecc..b97eb0f 100644
+index 35ebecc..314567c 100644
 --- a/src/ugrd/base/core.toml
 +++ b/src/ugrd/base/core.toml
-@@ -9,6 +9,7 @@ merge_usr = true
+@@ -8,7 +8,8 @@ find_libgcc = true
+ merge_usr = true
  hostonly = true
  validate = true
- library_paths = [ "/lib64" ]
-+binary_search_paths = ["/bin"]
+-library_paths = [ "/lib64" ]
++library_paths = [ "/lib", "/lib64" ]
++binary_search_paths = [ "/bin", "/sbin", "/usr/bin", "/usr/sbin" ]
  old_count = 1
  timeout = 15
  
-@@ -16,6 +17,7 @@ timeout = 15
- "ugrd.base.core" = [ "_process_build_logging",
- 		     "_process_out_file",
- 		     "_process_binaries_multi",
-+		     "_process_binary_search_paths_multi",
- 		     "_process_libraries_multi",
- 		     "_process_dependencies_multi",
- 		     "_process_opt_dependencies_multi",
-@@ -68,6 +70,7 @@ library_paths = "NoDupFlatList"  # library_paths property, used to define the li
+@@ -68,6 +69,7 @@ library_paths = "NoDupFlatList"  # library_paths property, used to define the li
  find_libgcc = "bool"  # If true, the initramfs will search for libgcc_s.so.1 and add it to the initramfs
  libraries = "NoDupFlatList"  # Additional libraries, by name, added to the initramfs
  binaries = "NoDupFlatList"  # Binaries which should be included in the intiramfs, dependencies resolved with lddtree
@@ -70,7 +61,7 @@ index 35ebecc..b97eb0f 100644
  nodes = "dict"  # Nodes dict, defines the device nodes to be created
  paths = "NoDupFlatList"  # Paths to be created in the initramfs
 diff --git a/src/ugrd/initramfs_generator.py b/src/ugrd/initramfs_generator.py
-index 6e5a049..04b2483 100644
+index 6e5a049..839becb 100644
 --- a/src/ugrd/initramfs_generator.py
 +++ b/src/ugrd/initramfs_generator.py
 @@ -253,6 +253,11 @@ class InitramfsGenerator(GeneratorHelpers):
@@ -80,7 +71,7 @@ index 6e5a049..04b2483 100644
 +        # Add search paths
 +        search_paths = ":".join(self["binary_search_paths"])
 +        self.logger.debug("Search paths: %s" % search_paths)
-+        out.append(f"export PATH={search_paths}:$PATH")
++        out.append(f"export PATH={search_paths}")
 +
          for func_name, func_content in self.included_functions.items():
              out.append("\n\n" + func_name + "() {")
