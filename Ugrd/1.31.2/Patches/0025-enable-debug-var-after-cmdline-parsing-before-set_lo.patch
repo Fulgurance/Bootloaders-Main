@@ -1,7 +1,7 @@
 From 8f9bab5b97138211baae135c6235c58b36b6ecc2 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 1 Feb 2025 12:12:30 -0600
-Subject: [PATCH 25/47] enable debug var after cmdline parsing, before
+Subject: [PATCH 25/49] enable debug var after cmdline parsing, before
  set_loglevel
 
 Signed-off-by: Zen <z@pyl.onl>

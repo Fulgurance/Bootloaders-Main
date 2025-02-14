@@ -1,7 +1,7 @@
 From 94dab5262a8755b19d94143b4dff51ab83b1ce88 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sun, 2 Feb 2025 11:00:39 -0600
-Subject: [PATCH 27/47] add internal devpts mount option, use for plymouth
+Subject: [PATCH 27/49] add internal devpts mount option, use for plymouth
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

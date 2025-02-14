@@ -1,7 +1,7 @@
 From e69e78a91fa685d9227014c45d8f22f6c322b1aa Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 25 Jan 2025 16:59:07 -0600
-Subject: [PATCH 05/47] squash init_late/init_cleanup, ensure init_final items
+Subject: [PATCH 05/49] squash init_late/init_cleanup, ensure init_final items
  run before switch_root
 
 Signed-off-by: Zen <z@pyl.onl>

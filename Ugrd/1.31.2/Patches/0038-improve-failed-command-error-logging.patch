@@ -1,7 +1,7 @@
 From ab100fffd559c3c0aed739245feb722896c446e6 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 8 Feb 2025 10:49:35 -0600
-Subject: [PATCH 38/47] improve failed command error logging
+Subject: [PATCH 38/49] improve failed command error logging
 
 also improve docs
 

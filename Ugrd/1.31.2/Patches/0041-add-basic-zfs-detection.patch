@@ -1,7 +1,7 @@
 From 95c05db4001aff7b120355a37c9d2e01e7a88448 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sun, 10 Nov 2024 15:05:25 -0600
-Subject: [PATCH 41/47] add basic zfs detection
+Subject: [PATCH 41/49] add basic zfs detection
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

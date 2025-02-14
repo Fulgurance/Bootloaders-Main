@@ -1,7 +1,7 @@
 From c3341a0cecfc49814665e2eb19fe9b4b026eda80 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 1 Feb 2025 11:59:15 -0600
-Subject: [PATCH 24/47] filter masked functions before import, improve logging
+Subject: [PATCH 24/49] filter masked functions before import, improve logging
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

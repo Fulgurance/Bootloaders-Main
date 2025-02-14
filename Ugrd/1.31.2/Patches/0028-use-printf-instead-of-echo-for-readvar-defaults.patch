@@ -1,7 +1,7 @@
 From ebd56a7636a6938f39a686e61b7699907a9e6be6 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 1 Feb 2025 13:33:51 -0600
-Subject: [PATCH 28/47] use printf instead of echo for readvar defaults
+Subject: [PATCH 28/49] use printf instead of echo for readvar defaults
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

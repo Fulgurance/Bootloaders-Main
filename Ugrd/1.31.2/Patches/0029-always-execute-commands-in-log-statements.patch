@@ -1,7 +1,7 @@
 From 8a2df4e21915a89a9e8591a1f803ed50e4fb635f Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 1 Feb 2025 14:47:21 -0600
-Subject: [PATCH 29/47] always execute commands in log statements
+Subject: [PATCH 29/49] always execute commands in log statements
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

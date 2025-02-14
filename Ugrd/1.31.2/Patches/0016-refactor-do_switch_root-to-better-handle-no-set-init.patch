@@ -1,7 +1,7 @@
 From 2197918acf0ed7aadf8d58f1b6309ac0e0326418 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 1 Feb 2025 19:32:29 -0600
-Subject: [PATCH 16/47] refactor do_switch_root to better handle no set init
+Subject: [PATCH 16/49] refactor do_switch_root to better handle no set init
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

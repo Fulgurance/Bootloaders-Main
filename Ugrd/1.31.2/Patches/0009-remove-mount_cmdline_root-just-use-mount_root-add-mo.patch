@@ -1,7 +1,7 @@
 From 9dda59b01d9ea945b29bcb611ae6b880cea7da9e Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sun, 26 Jan 2025 14:40:47 -0600
-Subject: [PATCH 09/47] remove mount_cmdline_root, just use mount_root, add
+Subject: [PATCH 09/49] remove mount_cmdline_root, just use mount_root, add
  mount_default_root
 
 attempt to use cmdline args, but fail back to mount_default_root
