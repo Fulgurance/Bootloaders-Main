@@ -1,0 +1,28 @@
+From 160305400f8efa41010208aa74b862de337900e6 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Fri, 14 Feb 2025 16:11:43 -0600
+Subject: [PATCH 1/2] don't make symlinks if the host path is not a symlink
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/core.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/ugrd/base/core.py b/src/ugrd/base/core.py
+index 9c804c0..36ca1a6 100644
+--- a/src/ugrd/base/core.py
++++ b/src/ugrd/base/core.py
+@@ -143,8 +143,9 @@ def handle_usr_symlinks(self) -> None:
+     for target, source in symlinks:
+         host_path = Path("/").joinpath(target)
+         if host_path.is_dir() and not host_path.is_symlink():
+-            self.logger.warning("Host path is a directory: %s" % host_path)
++            self.logger.warning("Host path is a directory, skipping symlink creation: %s" % host_path)
+             self.logger.warning("Set `merge_usr = false` to disable /usr merge.")
++            continue
+         self._symlink(source, target)
+ 
+ 
+-- 
+2.48.1
+
