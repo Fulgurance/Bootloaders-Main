@@ -24,6 +24,12 @@
       "name": "Pycpio",
       "version": ">=1.4.2",
       "options": []
+    },
+    {
+      "port": "SecuritySoftwares-Main",
+      "name": "Pax-Utils",
+      "version": ">=1.3.8",
+      "options": []
     }
   ],
   "kernelDependencies": [],
