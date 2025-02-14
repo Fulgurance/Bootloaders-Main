@@ -12,6 +12,18 @@
       "name": "Setuptools",
       "version": ">=75.3.0",
       "options": []
+    },
+    {
+      "port": "BaseLibraries-Main",
+      "name": "Zenlib",
+      "version": ">=3.1.5",
+      "options": []
+    },
+    {
+      "port": "BaseLibraries-Main",
+      "name": "Pycpio",
+      "version": ">=1.4.2",
+      "options": []
     }
   ],
   "kernelDependencies": [],
