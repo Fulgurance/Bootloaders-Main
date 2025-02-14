@@ -1,0 +1,144 @@
+From 79fc29baf213457998ffa5375fea6d4b3727e272 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sat, 1 Feb 2025 11:20:03 -0600
+Subject: [PATCH 23/34] define the custom init file in the core, allow
+ redefinition
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/console.toml      |  1 -
+ src/ugrd/base/core.toml         |  1 +
+ src/ugrd/initramfs_dict.py      | 20 +++++++++++++-------
+ src/ugrd/initramfs_generator.py |  6 ++++--
+ src/ugrd/net/net.py             |  2 +-
+ 5 files changed, 19 insertions(+), 11 deletions(-)
+
+diff --git a/src/ugrd/base/console.toml b/src/ugrd/base/console.toml
+index 0837da6..1760e28 100644
+--- a/src/ugrd/base/console.toml
++++ b/src/ugrd/base/console.toml
+@@ -1,5 +1,4 @@
+ binaries = [ "agetty" ]
+-_custom_init_file = "init_main.sh"
+ 
+ # Define the primary console
+ primary_console = "tty0"
+diff --git a/src/ugrd/base/core.toml b/src/ugrd/base/core.toml
+index 1801239..41fc815 100644
+--- a/src/ugrd/base/core.toml
++++ b/src/ugrd/base/core.toml
+@@ -1,6 +1,7 @@
+ tmpdir = "/tmp"
+ build_dir = "initramfs_build"
+ _build_log_level = 10
++_custom_init_file = "init_main.sh"
+ out_dir = "initramfs_out"
+ clean = true
+ find_libgcc = true
+diff --git a/src/ugrd/initramfs_dict.py b/src/ugrd/initramfs_dict.py
+index 136b0c7..7a22b2e 100644
+--- a/src/ugrd/initramfs_dict.py
++++ b/src/ugrd/initramfs_dict.py
+@@ -1,5 +1,5 @@
+ __author__ = "desultory"
+-__version__ = "2.3.2"
++__version__ = "2.3.3"
+ 
+ from collections import UserDict
+ from importlib import import_module
+@@ -194,7 +194,6 @@ class InitramfsConfigDict(UserDict):
+                 self.logger.debug("[%s] Processing queued value: %s" % (parameter_name, value))
+             self[parameter_name] = value
+ 
+-
+     def _process_import_order(self, import_order: dict) -> None:
+         """Processes the import order, setting the order requirements for import functions.
+         Ensures the order type is valid (before, after),
+@@ -212,7 +211,7 @@ class InitramfsConfigDict(UserDict):
+                     targets = [targets]
+                 if function in targets:
+                     raise ValueError("Function cannot be ordered after itself: %s" % function)
+-                for other_target in[self["import_order"].get(ot, {}) for ot in order_types if ot != order_type]:
++                for other_target in [self["import_order"].get(ot, {}) for ot in order_types if ot != order_type]:
+                     if function in other_target and any(target in other_target[function] for target in targets):
+                         raise ValueError("Function cannot be ordered in multiple types: %s" % function)
+                 order_dict[function] = targets
+@@ -274,12 +273,17 @@ class InitramfsConfigDict(UserDict):
+ 
+             function_list = self._process_import_functions(module, function_names)
+             if import_type == "custom_init":  # Only get the first function for custom init (should be 1)
++                if isinstance(function_list, list):
++                    custom_init = function_list[0]
++                else:
++                    custom_init = function_list
++
+                 if self["imports"]["custom_init"]:
+-                    raise ValueError("Custom init function already defined: %s" % self["imports"]["custom_init"])
++                    self.logger.warning("Custom init function already defined: %s" % self["imports"]["custom_init"])
+                 else:
+-                    self["imports"]["custom_init"] = function_list[0]
++                    self["imports"]["custom_init"] = custom_init
+                     self.logger.info(
+-                        "Registered custom init function: %s" % colorize(function_list[0].__name__, "blue", bold=True)
++                        "Registered custom init function: %s" % colorize(custom_init.__name__, "blue", bold=True)
+                     )
+                     continue
+ 
+@@ -298,7 +302,9 @@ class InitramfsConfigDict(UserDict):
+                 for function in function_list:
+                     self["custom_processing"][function.__name__] = function
+                     self.logger.debug("Registered config processing function: %s" % function.__name__)
+-                    self._process_unprocessed(function.__name__.removeprefix("_process_"))  # Re-process any queued values
++                    self._process_unprocessed(
++                        function.__name__.removeprefix("_process_")
++                    )  # Re-process any queued values
+ 
+     @handle_plural
+     def _process_modules(self, module: str) -> None:
+diff --git a/src/ugrd/initramfs_generator.py b/src/ugrd/initramfs_generator.py
+index 62de4e6..63ec50d 100644
+--- a/src/ugrd/initramfs_generator.py
++++ b/src/ugrd/initramfs_generator.py
+@@ -291,7 +291,7 @@ class InitramfsGenerator(GeneratorHelpers):
+         init.extend(self.run_init_hook("init_pre"))  # Always run init_pre first
+ 
+         # If custom_init is used, create the init using that
+-        if self["imports"].get("custom_init") and self.get("_custom_init_file"):
++        if self["imports"].get("custom_init"):
+             init += ["\n# !!custom_init"]
+             init_line, custom_init = self["imports"]["custom_init"](self)
+             if isinstance(init_line, str):
+@@ -299,6 +299,7 @@ class InitramfsGenerator(GeneratorHelpers):
+             else:
+                 init.extend(init_line)
+         else:  # Otherwise, use the standard init generator
++            custom_init = None
+             init.extend(self.generate_init_main())
+ 
+         init.extend(self.run_init_hook("init_final"))  # Always run init_final last
+@@ -308,7 +309,8 @@ class InitramfsGenerator(GeneratorHelpers):
+             self._write("/etc/profile", self.generate_profile(), 0o755)
+             self.logger.info("Included functions: %s" % ", ".join(list(self.included_functions.keys())))
+ 
+-        if self.get("_custom_init_file"):  # Write the custom init file if it exists
++        # Write the custom init file if it exists
++        if custom_init:
+             self._write(self["_custom_init_file"], custom_init, 0o755)
+ 
+         self._write("init", init, 0o755)
+diff --git a/src/ugrd/net/net.py b/src/ugrd/net/net.py
+index 1b429bb..b77a88f 100644
+--- a/src/ugrd/net/net.py
++++ b/src/ugrd/net/net.py
+@@ -5,7 +5,7 @@ from pathlib import Path
+ 
+ from zenlib.util import colorize, contains, unset
+ 
+-from .. import AutodetectError
++from ugrd import AutodetectError
+ 
+ 
+ def _process_net_device(self, net_device: str):
+-- 
+2.48.1
+

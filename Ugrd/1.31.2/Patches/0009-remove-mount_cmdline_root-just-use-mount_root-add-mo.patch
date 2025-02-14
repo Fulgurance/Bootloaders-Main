@@ -1,0 +1,181 @@
+From 9dda59b01d9ea945b29bcb611ae6b880cea7da9e Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sun, 26 Jan 2025 14:40:47 -0600
+Subject: [PATCH 09/34] remove mount_cmdline_root, just use mount_root, add
+ mount_default_root
+
+attempt to use cmdline args, but fail back to mount_default_root
+
+this simplifies the run routine and imports
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/cmdline.py   | 25 +++----------------------
+ src/ugrd/base/cmdline.toml |  3 ---
+ src/ugrd/fs/btrfs.toml     |  7 +++----
+ src/ugrd/fs/fakeudev.toml  |  2 +-
+ src/ugrd/fs/mounts.py      | 23 ++++++++++++++++++++++-
+ src/ugrd/fs/mounts.toml    |  6 +++---
+ 6 files changed, 32 insertions(+), 34 deletions(-)
+
+diff --git a/src/ugrd/base/cmdline.py b/src/ugrd/base/cmdline.py
+index 57f900a..2c6faa3 100644
+--- a/src/ugrd/base/cmdline.py
++++ b/src/ugrd/base/cmdline.py
+@@ -1,5 +1,5 @@
+ __author__ = "desultory"
+-__version__ = "3.0.1"
++__version__ = "3.1.0"
+ 
+ 
+ def parse_cmdline_bool(self) -> str:
+@@ -31,35 +31,16 @@ def parse_cmdline(self) -> str:
+     return rf"""
+     cmdline=$(awk -F '--' '{{print $1}}' /proc/cmdline)  # Get everything before '--'
+     setvar INIT_ARGS "$(awk -F '--' '{{print $2}}' /proc/cmdline)"  # Get everything after '--'
+-    for bool in {" ".join([f'"{bool}"' for bool in self['cmdline_bools']])}; do
++    for bool in {" ".join([f'"{bool}"' for bool in self["cmdline_bools"]])}; do
+         parse_cmdline_bool "$bool"
+     done
+-    for string in {" ".join([f'"{string}"' for string in self['cmdline_strings']])}; do
++    for string in {" ".join([f'"{string}"' for string in self["cmdline_strings"]])}; do
+         parse_cmdline_str "$string"
+     done
+     einfo "Parsed cmdline: $cmdline"
+     """
+ 
+ 
+-def mount_cmdline_root(self) -> str:
+-    """Returns shell script to mount root partition based on /proc/cmdline"""
+-    return """
+-    root=$(readvar root)
+-    if [ -z "$root" ]; then
+-        edebug "No root partition specified in /proc/cmdline, falling back to mount_root"
+-        mount_root
+-        return
+-    fi
+-    roottype="$(readvar roottype auto)"
+-    rootflags="$(readvar rootflags 'defaults,ro')"
+-    einfo "Mounting root partition based on /proc/cmdline: $root -t $roottype -o $rootflags"
+-    if ! mount "$root" "$(readvar MOUNTS_ROOT_TARGET)" -t "$roottype" -o "$rootflags"; then
+-        eerror "Failed to mount the root partition using /proc/cmdline: $root -t $roottype -o $rootflags"
+-        mount_root
+-    fi
+-    """
+-
+-
+ def export_exports(self) -> list[str]:
+     """Returns a shell script exporting all exports defined in the exports key.
+     Sets 'exported' to 1 once done.
+diff --git a/src/ugrd/base/cmdline.toml b/src/ugrd/base/cmdline.toml
+index 0af50e9..a568092 100644
+--- a/src/ugrd/base/cmdline.toml
++++ b/src/ugrd/base/cmdline.toml
+@@ -5,9 +5,6 @@ cmdline_strings = ['init', 'loglevel']
+ [imports.init_pre]
+ "ugrd.base.cmdline" = [ "export_exports", "parse_cmdline" ]
+ 
+-[imports.init_mount]
+-"ugrd.base.cmdline" = [ "mount_cmdline_root" ]
+-
+ [imports.functions]
+ "ugrd.base.cmdline" = [ "parse_cmdline_bool", "parse_cmdline_str" ]
+ 
+diff --git a/src/ugrd/fs/btrfs.toml b/src/ugrd/fs/btrfs.toml
+index cb6c15d..422af5c 100644
+--- a/src/ugrd/fs/btrfs.toml
++++ b/src/ugrd/fs/btrfs.toml
+@@ -15,12 +15,11 @@ autodetect_root_subvol = true
+ "ugrd.fs.btrfs" = [ "btrfs_scan", "set_root_subvol", "select_subvol" ]
+ 
+ [import_order.before]
+-btrfs_scan = ["set_root_subvol", "mount_cmdline_root", "mount_root"]
+-set_root_subvol = ["select_subvol", "mount_cmdline_root", "mount_root"]
+-select_subvol = ["mount_cmdline_root", "mount_root"]
++btrfs_scan = ["set_root_subvol", "mount_root"]
++set_root_subvol = ["select_subvol", "mount_root"]
++select_subvol = "mount_root"
+ 
+ [import_order.after]
+-mount_cmdline_root = ["btrfs_scan"]
+ mount_root = ["btrfs_scan"]
+ 
+ # Custom parameters
+diff --git a/src/ugrd/fs/fakeudev.toml b/src/ugrd/fs/fakeudev.toml
+index 0a630e5..f74d088 100644
+--- a/src/ugrd/fs/fakeudev.toml
++++ b/src/ugrd/fs/fakeudev.toml
+@@ -4,4 +4,4 @@ run_dirs = ['udev/data']
+ 'ugrd.fs.fakeudev' = ['fake_dm_udev']
+ 
+ [import_order.after]
+-fake_dm_udev = ["mount_late", "mount_cmdline_root"]
++fake_dm_udev = ["mount_late", "mount_root"]
+diff --git a/src/ugrd/fs/mounts.py b/src/ugrd/fs/mounts.py
+index ad6b8f1..19b2a99 100644
+--- a/src/ugrd/fs/mounts.py
++++ b/src/ugrd/fs/mounts.py
+@@ -797,7 +797,7 @@ def check_mounts(self) -> None:
+         _validate_host_mount(self, mount, "/" if mount_name == "root" else None)
+ 
+ 
+-def mount_root(self) -> str:
++def mount_default_root(self) -> str:
+     """Mounts the root partition to $MOUNTS_ROOT_TARGET."""
+     return f"""
+     if grep -qs "$(readvar MOUNTS_ROOT_TARGET)" /proc/mounts; then
+@@ -809,6 +809,27 @@ def mount_root(self) -> str:
+     """
+ 
+ 
++def mount_root(self) -> str:
++    """Returns a shell script to mount the root partition.
++    Uses root options defined in the cmdline if set, otherwise uses mount_default_root.
++    """
++    return """
++    root=$(readvar root)
++    if [ -z "$root" ]; then
++        edebug "No root partition specified in /proc/cmdline, falling back to mount_root"
++        mount_default_root
++        return
++    fi
++    roottype="$(readvar roottype auto)"
++    rootflags="$(readvar rootflags 'defaults,ro')"
++    einfo "Mounting root partition based on /proc/cmdline: $root -t $roottype -o $rootflags"
++    if ! mount "$root" "$(readvar MOUNTS_ROOT_TARGET)" -t "$roottype" -o "$rootflags"; then
++        eerror "Failed to mount the root partition using /proc/cmdline: $root -t $roottype -o $rootflags"
++        mount_default_root
++    fi
++    """
++
++
+ def export_mount_info(self) -> None:
+     """Exports mount info based on the config to /run/MOUNTS_ROOT_{option}"""
+     self["exports"]["MOUNTS_ROOT_SOURCE"] = _get_mount_str(self, self["mounts"]["root"])
+diff --git a/src/ugrd/fs/mounts.toml b/src/ugrd/fs/mounts.toml
+index 6b162af..b595b25 100644
+--- a/src/ugrd/fs/mounts.toml
++++ b/src/ugrd/fs/mounts.toml
+@@ -46,16 +46,16 @@ late_fstab = "/etc/fstab.late"
+ "ugrd.fs.mounts" = [ "mount_fstab" ]
+ 
+ [imports.init_mount]
+-"ugrd.fs.mounts" = [ "mount_late" ]
++"ugrd.fs.mounts" = [ "mount_root" ]
+ 
+ [imports.functions]
+-"ugrd.fs.mounts" = [ "mount_root" ]
++"ugrd.fs.mounts" = [ "mount_default_root" ]
+ 
+ [imports.init_final]
+ "ugrd.fs.mounts" = [ "umount_fstab" ]
+ 
+ [import_order.after]
+-mount_late = ["mount_root", "mount_cmdline_root"]
++mount_late = "mount_root"
+ make_run_dirs = "mount_base"
+ 
+ [custom_parameters]
+-- 
+2.48.1
+

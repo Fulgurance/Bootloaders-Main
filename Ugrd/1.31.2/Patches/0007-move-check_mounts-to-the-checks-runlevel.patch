@@ -1,0 +1,29 @@
+From 0ce7cb92d21e45c3257b4bf30b69dfbdd95e2fad Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sat, 25 Jan 2025 18:26:54 -0600
+Subject: [PATCH 07/34] move check_mounts to the checks runlevel
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/fs/mounts.toml | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/ugrd/fs/mounts.toml b/src/ugrd/fs/mounts.toml
+index 07ab6aa..6b162af 100644
+--- a/src/ugrd/fs/mounts.toml
++++ b/src/ugrd/fs/mounts.toml
+@@ -34,7 +34,10 @@ late_fstab = "/etc/fstab.late"
+ "ugrd.fs.mounts" = [ "export_mount_info" ]
+ 
+ [imports.build_final]
+-"ugrd.fs.mounts" = [ "check_mounts", "generate_fstab" ]
++"ugrd.fs.mounts" = [ "generate_fstab" ]
++
++[imports.checks]
++"ugrd.fs.mounts" = [ "check_mounts" ]
+ 
+ [imports.init_pre]
+ "ugrd.fs.mounts" = [ "mount_base", "make_run_dirs" ]
+-- 
+2.48.1
+

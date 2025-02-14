@@ -1,0 +1,42 @@
+From a5103fb368e7205147516dfae31b75937529342c Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sat, 1 Feb 2025 19:40:14 -0600
+Subject: [PATCH 19/34] don't add a console node by default
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/core.py   | 1 +
+ src/ugrd/base/core.toml | 5 -----
+ 2 files changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/src/ugrd/base/core.py b/src/ugrd/base/core.py
+index 801acb2..9b44e87 100644
+--- a/src/ugrd/base/core.py
++++ b/src/ugrd/base/core.py
+@@ -205,6 +205,7 @@ def deploy_symlinks(self) -> None:
+         self._symlink(symlink_parameters["source"], symlink_parameters["target"])
+ 
+ 
++@contains("nodes", "Skipping device node creation, no nodes are defined.")
+ @contains("make_nodes", "Skipping real device node creation with mknod, as make_nodes is not specified.", log_level=20)
+ def deploy_nodes(self) -> None:
+     """Generates specified device nodes."""
+diff --git a/src/ugrd/base/core.toml b/src/ugrd/base/core.toml
+index e02b2dc..1801239 100644
+--- a/src/ugrd/base/core.toml
++++ b/src/ugrd/base/core.toml
+@@ -11,11 +11,6 @@ library_paths = [ "/lib64" ]
+ old_count = 1
+ timeout = 15
+ 
+-[nodes.console]
+-mode = 0o644
+-major = 5
+-minor = 1
+-
+ [imports.config_processing]
+ "ugrd.base.core" = [ "_process_build_logging",
+ 		     "_process_out_file",
+-- 
+2.48.1
+

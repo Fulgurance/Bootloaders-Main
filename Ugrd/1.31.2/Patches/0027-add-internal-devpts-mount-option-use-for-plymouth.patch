@@ -1,0 +1,117 @@
+From 94dab5262a8755b19d94143b4dff51ab83b1ce88 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sun, 2 Feb 2025 11:00:39 -0600
+Subject: [PATCH 27/34] add internal devpts mount option, use for plymouth
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/plymouth.toml | 12 ++----------
+ src/ugrd/fs/mounts.py       | 16 ++++++++++++----
+ src/ugrd/fs/mounts.toml     |  8 ++++++++
+ 3 files changed, 22 insertions(+), 14 deletions(-)
+
+diff --git a/src/ugrd/base/plymouth.toml b/src/ugrd/base/plymouth.toml
+index edd1e45..00c8b6c 100644
+--- a/src/ugrd/base/plymouth.toml
++++ b/src/ugrd/base/plymouth.toml
+@@ -5,17 +5,11 @@ dependencies = ['/usr/share/plymouth/plymouthd.defaults',
+                 '/usr/share/plymouth/themes/details/details.plymouth']
+ 
+ run_dirs = ["plymouth"]
++mount_devpts = true
+ 
+ [imports.config_processing]
+ "ugrd.base.plymouth" = [ "_process_plymouth_themes_multi" ]
+ 
+-[mounts.devpts]
+-type = "devpts"
+-destination = "/dev/pts"
+-options = ['noauto', 'nosuid', 'noexec', 'rw', 'mode=620', 'gid=5']
+-no_validate = true
+-path = "devpts"
+-
+ [imports.build_enum]
+ "ugrd.base.plymouth" = [ "find_plymouth_config" ]
+ 
+@@ -23,14 +17,12 @@ path = "devpts"
+ "ugrd.base.plymouth" = [ "pull_plymouth" ]
+ 
+ [imports.init_pre]
+-"ugrd.base.plymouth" = [ "make_devpts", "start_plymouth" ]
++"ugrd.base.plymouth" = [ "start_plymouth" ]
+ 
+ [import_order.before]
+-make_devpts = "start_plymouth"
+ start_plymouth = "print_banner"
+ 
+ [import_order.after]
+-make_devpts = "mount_base"
+ start_plymouth = ["parse_cmdline", "make_run_dirs", "load_modules"]
+ 
+ [custom_parameters]
+diff --git a/src/ugrd/fs/mounts.py b/src/ugrd/fs/mounts.py
+index a733b7a..e45d810 100644
+--- a/src/ugrd/fs/mounts.py
++++ b/src/ugrd/fs/mounts.py
+@@ -224,10 +224,13 @@ def _get_mount_str(self, mount: dict, pad=False, pad_size=44) -> str:
+     return out_str
+ 
+ 
+-def _to_mount_cmd(self, mount: dict) -> str:
++def _to_mount_cmd(self, mount: dict, mkdir=False) -> str:
+     """Prints the object as a mount command."""
+     out = [f"if ! grep -qs {mount['destination']} /proc/mounts; then"]
+ 
++    if mkdir:
++        out += [f"    mkdir -p {mount['destination']} || rd_fail 'Failed to create mountpoint: {mount['destination']}'"]
++
+     mount_command = f"mount {_get_mount_str(self, mount)} {mount['destination']}"
+     if options := mount.get("options"):
+         mount_command += f" --options {','.join(options)}"
+@@ -683,9 +686,14 @@ def mount_base(self) -> list[str]:
+     Must be run before variables are used, as it creates the /run/vars directory.
+     """
+     out = []
+-    for mount in self["mounts"].values():
+-        if mount.get("base_mount"):
+-            out += _to_mount_cmd(self, mount)
++    for mount_name, mount_info in self["mounts"].items():
++        if not mount_info.get("base_mount") or mount_name == "devpts":
++            continue  # devpts must be mounted last, if needed
++        out.extend(_to_mount_cmd(self, mount_info))
++
++    if self["mount_devpts"]:
++        out.extend(_to_mount_cmd(self, self["mounts"]["devpts"], mkdir=True))
++
+     out += [f'einfo "Mounted base mounts, version: {__version__}"']
+     return out
+ 
+diff --git a/src/ugrd/fs/mounts.toml b/src/ugrd/fs/mounts.toml
+index b595b25..c868550 100644
+--- a/src/ugrd/fs/mounts.toml
++++ b/src/ugrd/fs/mounts.toml
+@@ -60,6 +60,7 @@ make_run_dirs = "mount_base"
+ 
+ [custom_parameters]
+ mounts = "dict"  # Add the mounts property, used to define the mounts to be made in the fstab
++mount_devpts = "bool"  # Whether or not to mount devpts
+ run_dirs = "NoDupFlatList"  # A list of directories to be created under /run
+ late_mounts = "dict"  # Like mounts, but run after the root is mounted
+ late_fstab = "str"  # The path to the late_fstab file
+@@ -105,6 +106,13 @@ path = "devtmpfs"
+ options = ['nosuid', 'mode=0755']
+ base_mount = true
+ 
++[mounts.devpts]
++type = "devpts"
++path = "devpts"
++destination = "/dev/pts"
++options = ['noauto', 'nosuid', 'noexec', 'rw', 'mode=620', 'gid=5']
++base_mount = true
++
+ [mounts.run]
+ type = "tmpfs"
+ path = "tmpfs"
+-- 
+2.48.1
+

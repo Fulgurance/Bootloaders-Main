@@ -1,0 +1,80 @@
+From 565d11e654fad83a23584918581224b6ca66cbb8 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Mon, 27 Jan 2025 16:38:32 -0600
+Subject: [PATCH 15/34] check the init target at the end instead of validating
+ when set
+
+add controls for hostonly/validate global toggles
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/base.py   | 7 ++++---
+ src/ugrd/base/base.toml | 3 +++
+ src/ugrd/fs/mounts.py   | 4 ++--
+ 3 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/src/ugrd/base/base.py b/src/ugrd/base/base.py
+index 245193e..08c21d4 100644
+--- a/src/ugrd/base/base.py
++++ b/src/ugrd/base/base.py
+@@ -8,8 +8,9 @@ from ugrd import AutodetectError, ValidationError
+ from zenlib.util import colorize, contains, unset
+ 
+ 
+-@contains("hostonly")
+-def _validate_init_target(self) -> None:
++@contains("validate")
++@contains("hostonly", "Skipping init validation, as hostonly is not set", log_level=30)
++def check_init_target(self) -> None:
+     if not self["init_target"].exists():
+         raise ValidationError("init_target not found at: %s" % self["init_target"])
+ 
+@@ -22,7 +23,6 @@ def _process_init_target(self, target: Path) -> None:
+         self["modules"] = "ugrd.fs.fakeudev"
+     self.data["init_target"] = target
+     self["exports"]["init"] = self["init_target"]
+-    _validate_init_target(self)
+ 
+ 
+ def _process_loglevel(self, loglevel: int) -> None:
+@@ -39,6 +39,7 @@ def _get_shell_path(self, shell_name) -> Path:
+         raise AutodetectError(f"Shell '{shell_name}' not found.")
+ 
+ 
++@contains("hostonly", "Skipping init_target autodetection, hostonly is not set.", log_level=30)
+ @contains("autodetect_init", log_level=30)
+ @unset("init_target", "init_target is already set, skipping autodetection.", log_level=30)
+ def autodetect_init(self) -> None:
+diff --git a/src/ugrd/base/base.toml b/src/ugrd/base/base.toml
+index 3fc4f58..5db5566 100644
+--- a/src/ugrd/base/base.toml
++++ b/src/ugrd/base/base.toml
+@@ -37,6 +37,9 @@ autodetect_init = true
+                      "klog", "edebug", "einfo", "ewarn", "eerror",
+ 		     "rd_fail", "rd_restart", "_find_init" ]
+ 
++[imports.checks]
++"ugrd.base.base" = [ "check_init_target" ]
++
+ [import_order.after]
+ set_loglevel = "parse_cmdline"
+ 
+diff --git a/src/ugrd/fs/mounts.py b/src/ugrd/fs/mounts.py
+index ecd9322..a733b7a 100644
+--- a/src/ugrd/fs/mounts.py
++++ b/src/ugrd/fs/mounts.py
+@@ -342,9 +342,9 @@ def get_blkid_info(self, device=None) -> dict:
+     return self["_blkid_info"][device] if device else self["_blkid_info"]
+ 
+ 
+-@contains("init_target", "init_target must be set", raise_exception=True)
+-@contains("autodetect_init_mount", "Init mount autodetection disabled, skipping.", log_level=30)
+ @contains("hostonly", "Skipping init mount autodetection, hostonly mode is disabled.", log_level=30)
++@contains("autodetect_init_mount", "Init mount autodetection disabled, skipping.", log_level=30)
++@contains("init_target", "init_target must be set", raise_exception=True)
+ def autodetect_init_mount(self) -> None:
+     """Checks the parent directories of init_target, if the path is a mountpoint, add it to late_mounts."""
+     init_mount = _find_mountpoint(self, self["init_target"])
+-- 
+2.48.1
+

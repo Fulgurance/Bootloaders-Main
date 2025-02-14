@@ -1,0 +1,97 @@
+From 631e43662bf07cc5997e0870ebe666897652d400 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sun, 2 Feb 2025 14:53:26 -0600
+Subject: [PATCH 33/34] refactor/improve switch_root, clean vars before
+ completion
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/base.py    | 32 +++++++++++++++-----------------
+ src/ugrd/base/base.toml  |  2 +-
+ src/ugrd/crypto/gpg.toml |  3 +--
+ 3 files changed, 17 insertions(+), 20 deletions(-)
+
+diff --git a/src/ugrd/base/base.py b/src/ugrd/base/base.py
+index b132dc9..c7da63f 100644
+--- a/src/ugrd/base/base.py
++++ b/src/ugrd/base/base.py
+@@ -1,5 +1,5 @@
+ __author__ = "desultory"
+-__version__ = "6.6.5"
++__version__ = "6.6.6"
+ 
+ from pathlib import Path
+ from shutil import which
+@@ -119,29 +119,27 @@ def do_switch_root(self) -> str:
+         eerror "Cannot switch_root from PID: $$, exiting."
+         exit 1
+     fi
+-    if ! grep -q " $(readvar SWITCH_ROOT_TARGET) " /proc/mounts ; then
+-        rd_fail "Root not found at: $(readvar SWITCH_ROOT_TARGET)"
++    switch_root_target=$(readvar SWITCH_ROOT_TARGET)
++    if ! grep -q " ${switch_root_target} " /proc/mounts ; then
++        rd_fail "Root not found at: $switch_root_target"
+     fi
+     if [ -z "$(readvar init)" ]; then
+         einfo "Init is no set, running autodetection."
+         _find_init || rd_fail "Unable to find init."
+     fi
+     init_target=$(readvar init)
+-    einfo "Checking root mount: $(readvar SWITCH_ROOT_TARGET)"
+-    if [ ! -e "$(readvar SWITCH_ROOT_TARGET)${init_target}" ] ; then
+-        ewarn "$init_target not found at: $(readvar SWITCH_ROOT_TARGET)"
+-        einfo "Target root contents:\n$(ls -l "$(readvar SWITCH_ROOT_TARGET)")"
+-        if _find_init ; then  # This redefines the var, so readvar is used instead of $init_target
+-            einfo "Switching root to: $(readvar SWITCH_ROOT_TARGET) $(readvar init)"
+-            klog "[UGRD $(readvar VERSION)] Running init: $(readvar init)"
+-            exec switch_root "$(readvar SWITCH_ROOT_TARGET)" "$(readvar init)"
+-        fi
+-        rd_fail "Unable to find init."
+-    else
+-        einfo "Switching root to: $(readvar SWITCH_ROOT_TARGET) $init_target"
+-        klog "[UGRD $(readvar VERSION)] Running init: $init_target"
+-        exec switch_root "$(readvar SWITCH_ROOT_TARGET)" "$init_target"
++    einfo "Checking root mount: $switch_root_target"
++    if [ ! -e "${switch_root_target}${init_target}" ] ; then
++        ewarn "$init_target not found at: $switch_root_target"
++        einfo "Target root contents:\n$(ls -l "$switch_root_target")"
++        _find_init || rd_fail "Unable to find init."  # Redefines init on success
++        init_target=$(readvar init)
+     fi
++    einfo "Switching root to: $switch_root_Target $init_target"
++    klog "[UGRD $(readvar VERSION)] Running init: $init_target"
++    einfo "Cleaning up /run/ugrd"
++    edebug "$(rm -rfv /run/ugrd)"
++    exec switch_root "$switch_root_target" "$init_target"
+     """
+ 
+ 
+diff --git a/src/ugrd/base/base.toml b/src/ugrd/base/base.toml
+index 1eaa022..53c06eb 100644
+--- a/src/ugrd/base/base.toml
++++ b/src/ugrd/base/base.toml
+@@ -6,7 +6,7 @@ modules = [ "ugrd.base.core",
+ 	    "ugrd.fs.cpio",
+ 	    "ugrd.base.checks" ]
+ 
+-binaries = [ "awk", "bc", "dd", "grep", "ls", "cp", "cat", "stty", "switch_root" ]
++binaries = [ "awk", "bc", "dd", "grep", "ls", "cp", "cat", "stty", "switch_root", "rm" ]
+ 
+ paths = [ "root", "tmp" ]
+ 
+diff --git a/src/ugrd/crypto/gpg.toml b/src/ugrd/crypto/gpg.toml
+index 633a5a5..a993350 100644
+--- a/src/ugrd/crypto/gpg.toml
++++ b/src/ugrd/crypto/gpg.toml
+@@ -1,7 +1,6 @@
+ modules = [ "ugrd.base.console", "ugrd.crypto.cryptsetup" ]
+ 
+-binaries = [ "/usr/bin/gpg", "/usr/bin/gpg-agent", "/usr/bin/gpgconf", "/usr/bin/gpg-connect-agent", "/usr/bin/pinentry-tty",
+-             "rm" ]  # rm needed to remove the decrypted key file
++binaries = [ "/usr/bin/gpg", "/usr/bin/gpg-agent", "/usr/bin/gpgconf", "/usr/bin/gpg-connect-agent", "/usr/bin/pinentry-tty" ]
+ opt_dependencies = [ '/usr/libexec/keyboxd' ]  # Pull keyboxd in as an optional dependency
+ 
+ 
+-- 
+2.48.1
+

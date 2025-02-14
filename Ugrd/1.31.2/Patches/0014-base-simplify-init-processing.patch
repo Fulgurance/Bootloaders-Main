@@ -1,0 +1,58 @@
+From cf07f0657359c6e9b509c98e41cfc6ae54880f6c Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sun, 2 Feb 2025 11:18:41 -0600
+Subject: [PATCH 14/34] base: simplify init processing
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/base.py   | 8 ++------
+ src/ugrd/base/base.toml | 2 +-
+ 2 files changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/src/ugrd/base/base.py b/src/ugrd/base/base.py
+index 2aa3a64..245193e 100644
+--- a/src/ugrd/base/base.py
++++ b/src/ugrd/base/base.py
+@@ -1,5 +1,5 @@
+ __author__ = "desultory"
+-__version__ = "6.6.0"
++__version__ = "6.6.1"
+ 
+ from pathlib import Path
+ from shutil import which
+@@ -31,11 +31,6 @@ def _process_loglevel(self, loglevel: int) -> None:
+     self["exports"]["loglevel"] = loglevel
+ 
+ 
+-@unset("init_target", "init_target is already set, skipping autodetection.", log_level=30)
+-def _process_autodetect_init(self, state) -> None:
+-    self.data["autodetect_init"] = state
+-
+-
+ def _get_shell_path(self, shell_name) -> Path:
+     """Gets the real path to the shell binary."""
+     if shell := which(shell_name):
+@@ -45,6 +40,7 @@ def _get_shell_path(self, shell_name) -> Path:
+ 
+ 
+ @contains("autodetect_init", log_level=30)
++@unset("init_target", "init_target is already set, skipping autodetection.", log_level=30)
+ def autodetect_init(self) -> None:
+     """Autodetects the init_target."""
+     if init := which("init"):
+diff --git a/src/ugrd/base/base.toml b/src/ugrd/base/base.toml
+index 2f25950..3fc4f58 100644
+--- a/src/ugrd/base/base.toml
++++ b/src/ugrd/base/base.toml
+@@ -15,7 +15,7 @@ shebang_args = "-l"
+ autodetect_init = true
+ 
+ [imports.config_processing]
+-"ugrd.base.base" = [ "_process_loglevel", "_process_init_target", "_process_autodetect_init" ]
++"ugrd.base.base" = [ "_process_loglevel", "_process_init_target" ]
+ 
+ [imports.build_enum]
+ "ugrd.base.base" = [ "autodetect_init" ]
+-- 
+2.48.1
+

@@ -1,0 +1,24 @@
+From bff6e87cce44b0d1dfde14c6c796428d67ef6ac9 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Mon, 27 Jan 2025 13:38:28 -0600
+Subject: [PATCH 12/34] ensure gpg keys are imported before crypt_init
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/crypto/smartcard.toml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/ugrd/crypto/smartcard.toml b/src/ugrd/crypto/smartcard.toml
+index 6e1c033..77edd1b 100644
+--- a/src/ugrd/crypto/smartcard.toml
++++ b/src/ugrd/crypto/smartcard.toml
+@@ -20,3 +20,6 @@ sc_public_key = "Path"  # The path to the public key to import
+ 
+ [import_order.after]
+ import_keys = "start_agent"
++
++[import_order.before]
++import_keys = "crypt_init"
+-- 
+2.48.1
+

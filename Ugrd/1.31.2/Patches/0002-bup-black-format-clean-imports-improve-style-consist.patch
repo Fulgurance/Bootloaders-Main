@@ -1,0 +1,489 @@
+From 320b5224eb5935cd4b88d0a2b372ef8f48914d75 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sat, 25 Jan 2025 10:13:29 -0600
+Subject: [PATCH 02/34] bup, black format, clean imports, improve style
+ consistency
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ CONTRIBUTING.md            |  5 +--
+ pyproject.toml             |  3 +-
+ src/ugrd/base/base.py      |  5 +--
+ src/ugrd/base/core.py      | 19 ++++--------
+ src/ugrd/base/core.toml    |  4 +--
+ src/ugrd/base/debug.py     | 62 ++++++++++++++++++++------------------
+ src/ugrd/base/debug.toml   |  5 ++-
+ src/ugrd/base/test.py      |  6 ++--
+ src/ugrd/fs/mounts.py      | 33 +++++++++++---------
+ src/ugrd/initramfs_dict.py | 20 +++++++-----
+ 10 files changed, 83 insertions(+), 79 deletions(-)
+
+diff --git a/CONTRIBUTING.md b/CONTRIBUTING.md
+index 85b2487..ee4ad6c 100644
+--- a/CONTRIBUTING.md
++++ b/CONTRIBUTING.md
+@@ -24,14 +24,15 @@ Variables should generally be colored using the following scheme:
+ 
+ bools to disable validation should be named in the format: `no_validate_<attr>`.
+ 
+-> bools are initialized to `False` so does not need to be set unless defaulting to `True`
++> bools are initialized to `False` so do not need to be set unless defaulting to `True`
+ 
+ ### Function names
+ 
+ * Variable processing functions MUST be named in the format: `_process_<attr>`.
+ * Functions which are not used outside of the module should be prefixed with an underscore.
+ * Autodetection functions should be named in the format: `autodetect_<attr>`.
++* Enumeration functions should be named `get_<thing>`. such as `get_blkid_info`.
+ * Validation functions should be named in the format: `validate_<attr>`.
++* Check functions should be named in the format: `check_<attr>`.
+ * Functions which move files into the build dir or image should be named `deploy_<thing>`.
+ * Functions which update the exports should be named `export_<thing>`. such as `export_mount_info`.
+-* Enumeration functions should be named `get_<thing>`. such as `get_blkid_info`.
+diff --git a/pyproject.toml b/pyproject.toml
+index ce6c334..ed301ec 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -4,8 +4,7 @@ build-backend = "setuptools.build_meta"
+ 
+ [project]
+ name = "ugrd"
+-version = "1.31.2"
+-
++version = "2.0.0"
+ authors = [
+   { name="Desultory", email="dev@pyl.onl" },
+ ]
+diff --git a/src/ugrd/base/base.py b/src/ugrd/base/base.py
+index 74c258b..79dd156 100644
+--- a/src/ugrd/base/base.py
++++ b/src/ugrd/base/base.py
+@@ -2,6 +2,7 @@ __author__ = "desultory"
+ __version__ = "6.4.0"
+ 
+ from pathlib import Path
++from shutil import which
+ 
+ from ugrd import AutodetectError, ValidationError
+ from zenlib.util import colorize, contains, unset
+@@ -36,8 +37,6 @@ def _process_autodetect_init(self, state) -> None:
+ 
+ def _get_shell_path(self, shell_name) -> Path:
+     """Gets the real path to the shell binary."""
+-    from shutil import which
+-
+     if shell := which(shell_name):
+         return Path(shell).resolve()
+     else:
+@@ -47,8 +46,6 @@ def _get_shell_path(self, shell_name) -> Path:
+ @contains("autodetect_init", log_level=30)
+ def autodetect_init(self) -> None:
+     """Autodetects the init_target."""
+-    from shutil import which
+-
+     if init := which("init"):
+         self.logger.info("Detected init at: %s", colorize(init, "cyan", bright=True))
+         self["init_target"] = init
+diff --git a/src/ugrd/base/core.py b/src/ugrd/base/core.py
+index e9affbf..8812b42 100644
+--- a/src/ugrd/base/core.py
++++ b/src/ugrd/base/core.py
+@@ -1,8 +1,11 @@
+ __author__ = "desultory"
+ __version__ = "4.1.3"
+ 
++from os import environ, makedev, mknod
+ from pathlib import Path
+ from shutil import rmtree, which
++from stat import S_IFCHR
++from subprocess import run
+ from typing import Union
+ 
+ from ugrd import AutodetectError, ValidationError
+@@ -10,10 +13,8 @@ from zenlib.types import NoDupFlatList
+ from zenlib.util import colorize, contains, unset
+ 
+ 
+-def detect_tmpdir(self) -> None:
++def get_tmpdir(self) -> None:
+     """Reads TMPDIR from the environment, sets it as the temporary directory."""
+-    from os import environ
+-
+     if tmpdir := environ.get("TMPDIR"):
+         self.logger.info("Detected TMPDIR: %s" % (colorize(tmpdir, "cyan")))
+         self["tmpdir"] = Path(tmpdir)
+@@ -57,11 +58,10 @@ def generate_structure(self) -> None:
+         self._mkdir(subdir)
+ 
+ 
+-def add_conditional_dependencies(self) -> None:
++def get_conditional_dependencies(self) -> None:
+     """Adds conditional dependencies to the dependencies list.
+     Keys are the dependency, values are a tuple of the condition type and value.
+     """
+-
+     def add_dep(dep: str) -> None:
+         try:  # Try to add it as a binary, if it fails, add it as a dependency
+             self["binaries"] = dep
+@@ -82,8 +82,6 @@ def calculate_dependencies(self, binary: str) -> list[Path]:
+     :param binary: The binary to calculate dependencies for
+     :return: A list of dependency paths
+     """
+-    from subprocess import run
+-
+     binary_path = which(binary)
+     if not binary_path:
+         raise AutodetectError("'%s' not found in PATH" % binary)
+@@ -193,9 +191,6 @@ def deploy_symlinks(self) -> None:
+ @contains("make_nodes", "Skipping real device node creation with mknod, as make_nodes is not specified.", log_level=20)
+ def deploy_nodes(self) -> None:
+     """Generates specified device nodes."""
+-    from os import makedev, mknod
+-    from stat import S_IFCHR
+-
+     for node, config in self["nodes"].items():
+         node_path_abs = Path(config["path"])
+ 
+@@ -214,12 +209,10 @@ def deploy_nodes(self) -> None:
+ 
+ 
+ @contains("find_libgcc", "Skipping libgcc_s dependency resolution", log_level=20)
+-def find_libgcc(self) -> None:
++def autodetect_libgcc(self) -> None:
+     """Finds libgcc.so, adds a 'dependencies' item for it.
+     Adds the parent directory to 'library_paths'
+     """
+-    from pathlib import Path
+-
+     musl_warning = False
+     try:
+         cmd = self._run(["ldconfig", "-p"], fail_silent=True, fail_hard=False)
+diff --git a/src/ugrd/base/core.toml b/src/ugrd/base/core.toml
+index b9e70d8..298f4d3 100644
+--- a/src/ugrd/base/core.toml
++++ b/src/ugrd/base/core.toml
+@@ -34,7 +34,7 @@ minor = 1
+ 		   ]
+ 
+ [imports.build_enum]
+-"ugrd.base.core" = [ "detect_tmpdir", "find_libgcc", "get_shell" ]
++"ugrd.base.core" = [ "get_tmpdir", "autodetect_libgcc", "get_shell" ]
+ 
+ [imports.build_pre]
+ "ugrd.base.core" = [ "clean_build_dir" ]
+@@ -42,7 +42,7 @@ minor = 1
+ [imports.build_deploy]
+ "ugrd.base.core" = [ "generate_structure",
+ 		     "handle_usr_symlinks",  # These should be set first
+-		     "add_conditional_dependencies",
++		     "get_conditional_dependencies",
+ 		     "deploy_dependencies",
+ 		     "deploy_xz_dependencies",
+ 		     "deploy_gz_dependencies",
+diff --git a/src/ugrd/base/debug.py b/src/ugrd/base/debug.py
+index 03c805d..9977687 100644
+--- a/src/ugrd/base/debug.py
++++ b/src/ugrd/base/debug.py
+@@ -1,50 +1,54 @@
+ __author__ = "desultory"
+-__version__ = "1.3.2"
++__version__ = "1.4.0"
+ 
+-from zenlib.util import contains, colorize
+-from ugrd import AutodetectError, ValidationError
+-from pathlib import Path
+ from os import environ
++from pathlib import Path
++
++from ugrd import AutodetectError, ValidationError
++from zenlib.util import colorize, contains, unset
+ 
+ EXPECTED_EDITORS = {"nano", "vim", "vi"}
+ # removed emacs, it doesn't work without lots of scripts and info from /usr/share, hard to keep the image a reasonable size
+ 
+ 
+-def detect_editor(self) -> None:
+-    editor = self.get("editor") or environ.get("EDITOR") or "nano"
++@unset("editor")
++def autodetect_editor(self):
++    """ Auto-detect the editor from the environment. """
++    self["editor"] = environ.get("EDITOR", "nano")
+ 
+-    self.logger.info("[debug] Using editor: %s" % colorize(editor, "cyan"))
++def _process_editor(self, editor: str):
++    """ Process the editor configuration. """
++    _validate_editor(self, editor)
+ 
+-    # setting value will automatically call the hook to validate the path/deps
+-    try:
++    try:  # setting value will automatically call the hook to validate the path/deps
+         self["binaries"] = editor
+     except AutodetectError:
+         # reraise to specifically flag editor config
+-        raise AutodetectError("Failed to locate editor binary: %s" % colorize(editor, "cyan"))
+-
+-    # Send a warning if the editor it's a common one, but still use it if it exists
+-    # check basename specifically in case a path is given
+-    base = Path(editor).name
+-    if base not in EXPECTED_EDITORS:
+-        if self.get("validate") and not self.get("no_validate_editor"):
+-            # validate the basename of the editor, in case full path is specified
+-            raise ValidationError("Use of unrecognised editor %s with validation enabled" % colorize(base, "cyan"))
++        raise AutodetectError("Failed to locate editor binary and dependencies: %s" % colorize(editor, "red"))
++    self.logger.info("[debug] Using editor: %s" % colorize(editor, "cyan"))
++    self.data["editor"] = editor
++
++def _validate_editor(self, editor: str):
++    """ Checks that the configured editor has been tested and is known to work. """
++    editor_name = Path(editor).name  # validate the basename of the editor, in case full path is specified
++    if editor_name not in EXPECTED_EDITORS:
++        if self["validate"] and not self["no_validate_editor"]:
++            raise ValidationError("Unrecognized editor: %s" % colorize(editor_name, "red"))
+         else:
+-            self.logger.warning(
+-                "Editor binary not recognised, can be overridden with 'editor' in config or EDITOR in environment if incorrect, otherwise can be disregarded."
+-            )
++            self.logger.warning("Configured editor is not recognized: %s" % colorize(editor_name, "yellow"))
++            self.logger.warning("If this is intentional, set 'no_validate_editor' to suppress this warning.")
+ 
+ 
+ def start_shell(self) -> str:
+     """Start a shell at the start of the initramfs."""
+-    return [
+-        "if ! check_var debug; then",
+-        '    ewarn "The debug module is enabled, but debug is not set enabled"',
+-        "    return",
+-        "fi",
+-        'einfo "Starting debug shell"',
+-        "sh -l",
+-    ]
++    return """
++    if ! check_var debug; then
++        ewarn "The debug module is enabled, but debug is not set enabled"
++        return
++    fi
++    einfo "Starting debug shell"
++    sh -l
++    """
+ 
+ 
+ @contains("start_shell", "Not enabling the debug shell, as the start_shell option is not set.", log_level=30)
+diff --git a/src/ugrd/base/debug.toml b/src/ugrd/base/debug.toml
+index 4b87317..aefee18 100644
+--- a/src/ugrd/base/debug.toml
++++ b/src/ugrd/base/debug.toml
+@@ -7,8 +7,11 @@ dependencies = [ "/usr/share/terminfo/l/linux" ] # required by most editors
+ 
+ start_shell = true
+ 
++[imports.config_processing]
++"ugrd.base.debug" = [ "_process_editor" ]
++
+ [imports.build_enum]
+-"ugrd.base.debug" = [ "detect_editor" ]
++"ugrd.base.debug" = [ "autodetect_editor" ]
+ 
+ [imports.init_pre]
+ "ugrd.base.debug" = [ "enable_debug" ]
+diff --git a/src/ugrd/base/test.py b/src/ugrd/base/test.py
+index f2ee520..39b518a 100644
+--- a/src/ugrd/base/test.py
++++ b/src/ugrd/base/test.py
+@@ -1,13 +1,13 @@
+ __version__ = "1.2.0"
+ 
++from pathlib import Path
++from uuid import uuid4
+ from zenlib.util import colorize, unset
+ 
+ 
+ @unset("test_kernel")
+ def find_kernel_path(self):
+     """Finds the kernel path for the current system"""
+-    from pathlib import Path
+-
+     self.logger.info("Trying to find the kernel path for: %s", colorize(self["kernel_version"], "blue"))
+     kernel_path = Path(self["_kmod_dir"]) / "vmlinuz"  # try this first
+     if not (self["_kmod_dir"] / "vmlinuz").exists():
+@@ -27,8 +27,6 @@ def find_kernel_path(self):
+ 
+ def init_test_vars(self):
+     """Initializes the test variables"""
+-    from uuid import uuid4
+-
+     find_kernel_path(self)
+     if not self["test_flag"]:
+         self["test_flag"] = uuid4()
+diff --git a/src/ugrd/fs/mounts.py b/src/ugrd/fs/mounts.py
+index 80c5b9b..fb444ff 100644
+--- a/src/ugrd/fs/mounts.py
++++ b/src/ugrd/fs/mounts.py
+@@ -107,7 +107,7 @@ def _merge_mounts(self, mount_name: str, mount_config, mount_class) -> None:
+         self.logger.debug("[%s] Skipping mount merge, mount not found: %s" % (mount_class, mount_name))
+         return mount_config
+ 
+-    self.logger.info("[%s] Updating mount: %s" % (mount_class, mount_name))
++    self.logger.info("[%s] Updating mount: %s" % (mount_class, colorize(mount_name, "blue")))
+     self.logger.debug("[%s] Updating mount with: %s" % (mount_name, mount_config))
+     if "options" in self[mount_class][mount_name] and "options" in mount_config:
+         self.logger.debug("Merging options: %s" % mount_config["options"])
+@@ -515,7 +515,7 @@ def _autodetect_dm(self, mountpoint, device=None) -> None:
+ 
+ @contains("autodetect_root_raid", "Skipping RAID autodetection, autodetect_root_raid is disabled.", log_level=30)
+ @contains("hostonly", "Skipping RAID autodetection, hostonly mode is disabled.", log_level=30)
+-def autodetect_raid(self, mount_loc, dm_name, blkid_info) -> None:
++def autodetect_raid(self, source_dev, dm_name, blkid_info) -> None:
+     """Autodetects MD RAID mounts and sets the raid config.
+     Adds kmods for the raid level to the autodetect list.
+     """
+@@ -524,7 +524,7 @@ def autodetect_raid(self, mount_loc, dm_name, blkid_info) -> None:
+         self["modules"] = "ugrd.fs.mdraid"
+ 
+     if level := self["_vblk_info"][dm_name].get("level"):
+-        self.logger.info("[%s] MDRAID level: %s" % (mount_loc.name, colorize(level, "cyan")))
++        self.logger.info("[%s] MDRAID level: %s" % (source_dev.name, colorize(level, "cyan")))
+         self["_kmod_auto"] = level
+     else:
+         raise AutodetectError("[%s] Failed to autodetect MDRAID level: %s" % (dm_name, blkid_info))
+@@ -532,26 +532,26 @@ def autodetect_raid(self, mount_loc, dm_name, blkid_info) -> None:
+ 
+ @contains("autodetect_root_lvm", "Skipping LVM autodetection, autodetect_root_lvm is disabled.", log_level=20)
+ @contains("hostonly", "Skipping LVM autodetection, hostonly mode is disabled.", log_level=30)
+-def autodetect_lvm(self, mount_loc, dm_num, blkid_info) -> None:
++def autodetect_lvm(self, source_dev, dm_num, blkid_info) -> None:
+     """Autodetects LVM mounts and sets the lvm config."""
+     if "ugrd.fs.lvm" not in self["modules"]:
+         self.logger.info("Autodetected LVM mount, enabling the %s module." % colorize("lvm", "cyan"))
+         self["modules"] = "ugrd.fs.lvm"
+ 
+     if uuid := blkid_info.get("uuid"):
+-        self.logger.info("[%s] LVM volume contianer uuid: %s" % (mount_loc.name, colorize(uuid, "cyan")))
++        self.logger.info("[%s] LVM volume contianer uuid: %s" % (source_dev.name, colorize(uuid, "cyan")))
+         self["lvm"] = {self["_vblk_info"][dm_num]["name"]: {"uuid": uuid}}
+     else:
+-        raise AutodetectError("Failed to autodetect LVM volume uuid: %s" % mount_loc.name)
++        raise AutodetectError("Failed to autodetect LVM volume uuid: %s" % source_dev.name)
+ 
+ 
+ @contains("autodetect_root_luks", "Skipping LUKS autodetection, autodetect_root_luks is disabled.", log_level=30)
+ @contains("hostonly", "Skipping LUKS autodetection, hostonly mode is disabled.", log_level=30)
+-def autodetect_luks(self, mount_loc, dm_num, blkid_info) -> None:
++def autodetect_luks(self, source_dev, dm_num, blkid_info) -> None:
+     """Autodetects LUKS mounts and sets the cryptsetup config."""
+     if "ugrd.crypto.cryptsetup" not in self["modules"]:
+         self.logger.info(
+-            "Autodetected LUKS mount, enabling the cryptsetup module: %s" % colorize(mount_loc.name, "cyan")
++            "Autodetected LUKS mount, enabling the cryptsetup module: %s" % colorize(source_dev.name, "cyan")
+         )
+         self["modules"] = "ugrd.crypto.cryptsetup"
+ 
+@@ -566,13 +566,13 @@ def autodetect_luks(self, mount_loc, dm_num, blkid_info) -> None:
+ 
+     if len(self["_vblk_info"][dm_num]["slaves"]) > 1:
+         self.logger.error("Device mapper slaves: %s" % colorize(self["_vblk_info"][dm_num]["slaves"], "red", bold=True))
+-        raise AutodetectError("Multiple slaves found for device mapper device, unknown type: %s" % mount_loc.name)
++        raise AutodetectError("Multiple slaves found for device mapper device, unknown type: %s" % source_dev.name)
+ 
+     dm_type = blkid_info.get("type")
+     if dm_type != "crypto_LUKS":
+         if not blkid_info.get("uuid"):  # No uuid will be defined if there are detached headers
+-            if not self["cryptsetup"][mount_loc.name].get("header_file"):
+-                raise AutodetectError("[%s] Unknown LUKS mount type: %s" % (mount_loc.name, dm_type))
++            if not self["cryptsetup"][source_dev.name].get("header_file"):
++                raise AutodetectError("[%s] Unknown LUKS mount type: %s" % (source_dev.name, dm_type))
+         else:  # If there is some uuid and it's not LUKS, that's a problem
+             raise AutodetectError(
+                 "[%s] Unknown device mapper slave type: %s" % (self["_vblk_info"][dm_num]["slaves"][0], dm_type)
+@@ -580,15 +580,20 @@ def autodetect_luks(self, mount_loc, dm_num, blkid_info) -> None:
+ 
+     # Configure cryptsetup based on the LUKS mount
+     if uuid := blkid_info.get("uuid"):
+-        self.logger.info("[%s] LUKS volume uuid: %s" % (mount_loc.name, colorize(uuid, "cyan")))
++        self.logger.info("[%s] LUKS volume uuid: %s" % (source_dev.name, colorize(uuid, "cyan")))
+         self["cryptsetup"] = {self["_vblk_info"][dm_num]["name"]: {"uuid": uuid}}
+     elif partuuid := blkid_info.get("partuuid"):
+-        self.logger.info("[%s] LUKS volume partuuid: %s" % (mount_loc.name, colorize(partuuid, "cyan")))
++        self.logger.info("[%s] LUKS volume partuuid: %s" % (source_dev.name, colorize(partuuid, "cyan")))
+         self["cryptsetup"] = {self["_vblk_info"][dm_num]["name"]: {"partuuid": partuuid}}
+ 
+     self.logger.info(
+         "[%s] Configuring cryptsetup for LUKS mount (%s) on: %s\n%s"
+-        % (mount_loc.name, self["_vblk_info"][dm_num]["name"], dm_num, pretty_print(self["cryptsetup"]))
++        % (
++            source_dev.name,
++            colorize(self["_vblk_info"][dm_num]["name"], "cyan"),
++            colorize(dm_num, "blue"),
++            pretty_print(self["cryptsetup"]),
++        )
+     )
+ 
+ 
+diff --git a/src/ugrd/initramfs_dict.py b/src/ugrd/initramfs_dict.py
+index 806a55b..cc8ed43 100644
+--- a/src/ugrd/initramfs_dict.py
++++ b/src/ugrd/initramfs_dict.py
+@@ -1,7 +1,9 @@
+ __author__ = "desultory"
+-__version__ = "2.3.1"
++__version__ = "2.3.2"
+ 
+ from collections import UserDict
++from importlib import import_module
++from importlib.util import module_from_spec, spec_from_file_location
+ from pathlib import Path
+ from queue import Queue
+ from tomllib import TOMLDecodeError, load
+@@ -64,7 +66,9 @@ class InitramfsConfigDict(UserDict):
+ 
+     def __setitem__(self, key: str, value) -> None:
+         if self["validated"]:
+-            return self.logger.error("[%s] Config is validated, refusing to set value: %s" % (key, colorize(value, "red")))
++            return self.logger.error(
++                "[%s] Config is validated, refusing to set value: %s" % (key, colorize(value, "red"))
++            )
+         # If the type is registered, use the appropriate update function
+         if any(key in d for d in (self.builtin_parameters, self["custom_parameters"])):
+             return self.handle_parameter(key, value)
+@@ -190,8 +194,6 @@ class InitramfsConfigDict(UserDict):
+     @handle_plural
+     def _process_imports(self, import_type: str, import_value: dict) -> None:
+         """Processes imports in a module, importing the functions and adding them to the appropriate list."""
+-        from importlib import import_module
+-        from importlib.util import module_from_spec, spec_from_file_location
+ 
+         for module_name, function_names in import_value.items():
+             self.logger.debug("[%s]<%s> Importing module functions : %s" % (module_name, import_type, function_names))
+@@ -225,8 +227,7 @@ class InitramfsConfigDict(UserDict):
+                 else:
+                     self["imports"]["custom_init"] = function_list[0]
+                     self.logger.info(
+-                        "Registered custom init function: %s"
+-                        % colorize(function_list[0].__name__, "blue", bold=True)
++                        "Registered custom init function: %s" % colorize(function_list[0].__name__, "blue", bold=True)
+                     )
+                     continue
+ 
+@@ -248,7 +249,7 @@ class InitramfsConfigDict(UserDict):
+ 
+     @handle_plural
+     def _process_modules(self, module: str) -> None:
+-        """ processes a single module into the config """
++        """processes a single module into the config"""
+         if module in self["modules"]:
+             self.logger.debug("Module '%s' already loaded" % module)
+             return
+@@ -296,7 +297,10 @@ class InitramfsConfigDict(UserDict):
+     def validate(self) -> None:
+         """Validate config, checks that all values are processed, sets validated flag."""
+         if self["_processing"]:
+-            self.logger.critical("Unprocessed config values: %s" % colorize(", ".join(list(self["_processing"].keys())), "red", bold=True))
++            self.logger.critical(
++                "Unprocessed config values: %s"
++                % colorize(", ".join(list(self["_processing"].keys())), "red", bold=True)
++            )
+         self["validated"] = True
+ 
+     def __str__(self) -> str:
+-- 
+2.48.1
+

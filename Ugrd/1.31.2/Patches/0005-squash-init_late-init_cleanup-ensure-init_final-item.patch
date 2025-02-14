@@ -1,0 +1,113 @@
+From e69e78a91fa685d9227014c45d8f22f6c322b1aa Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sat, 25 Jan 2025 16:59:07 -0600
+Subject: [PATCH 05/34] squash init_late/init_cleanup, ensure init_final items
+ run before switch_root
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ docs/dev_manual.md              | 2 --
+ src/ugrd/base/base.py           | 9 ++++++++-
+ src/ugrd/base/base.toml         | 3 +++
+ src/ugrd/fs/ext4.toml           | 3 +--
+ src/ugrd/fs/mounts.toml         | 2 +-
+ src/ugrd/initramfs_generator.py | 2 --
+ 6 files changed, 13 insertions(+), 8 deletions(-)
+
+diff --git a/docs/dev_manual.md b/docs/dev_manual.md
+index 68fa0b3..26cc7aa 100644
+--- a/docs/dev_manual.md
++++ b/docs/dev_manual.md
+@@ -85,9 +85,7 @@ By default, the following init hooks are available:
+ * `init_pre` - Where the base initramfs environment is set up; basic mounts are initialized and the kernel cmdline is read.
+ * `init_debug` - Where a shell is started if `start_shell` is enabled in the debug module.
+ * `init_main` - Most important initramfs activities should take place here.
+-* `init_late` - Space for late initramfs actions, such as activating LVM volumes.
+ * `init_mount` - Where the root filesystem mount takes place
+-* `init_cleanup` - Currently unused, where cleanup before `switch_root` should take place.
+ * `init_final` - Where `switch_root` is executed.
+ 
+ > These hooks are defined under the `init_types` list in the `InitramfsGenerator` object.
+diff --git a/src/ugrd/base/base.py b/src/ugrd/base/base.py
+index 79dd156..c6d045d 100644
+--- a/src/ugrd/base/base.py
++++ b/src/ugrd/base/base.py
+@@ -1,5 +1,5 @@
+ __author__ = "desultory"
+-__version__ = "6.4.0"
++__version__ = "6.5.0"
+ 
+ from pathlib import Path
+ from shutil import which
+@@ -62,6 +62,13 @@ def set_shebang(self) -> None:
+     self.logger.info("Setting shebang to: %s", colorize(self["shebang"], "cyan", bright=True))
+ 
+ 
++def set_init_final_order(self) -> None:
++    """Adds a "before" do_switch_root order to everything in the init_final hook, excep do_switch_root."""
++    for hook in self["imports"]["init_final"]:
++        if hook.__name__ != "do_switch_root":
++            self["import_order"] = {"before": {hook.__name__: "do_switch_root"}}
++
++
+ def export_switch_root_target(self) -> None:
+     """Adds SWITCH_ROOT_TARGET to exports.
+     Uses switch_root_target if set, otherwise uses the rootfs."""
+diff --git a/src/ugrd/base/base.toml b/src/ugrd/base/base.toml
+index 0a1e621..2f25950 100644
+--- a/src/ugrd/base/base.toml
++++ b/src/ugrd/base/base.toml
+@@ -23,6 +23,9 @@ autodetect_init = true
+ [imports.build_tasks]
+ "ugrd.base.base" = [ "set_shebang", "export_switch_root_target" ]
+ 
++[imports.build_final]
++"ugrd.base.base" = [ "set_init_final_order" ]
++
+ [imports.init_pre]
+ "ugrd.base.base" = [ "set_loglevel" ]
+ 
+diff --git a/src/ugrd/fs/ext4.toml b/src/ugrd/fs/ext4.toml
+index d2d1982..c3c4580 100644
+--- a/src/ugrd/fs/ext4.toml
++++ b/src/ugrd/fs/ext4.toml
+@@ -1,8 +1,7 @@
+ modules = [ "ugrd.fs.mounts" ]
+ kmod_init = [ "ext4" ]
+ 
+-
+-[imports.init_cleanup]
++[imports.init_final]
+ "ugrd.fs.ext4" = [ "ext4_fsck" ]
+ 
+ [conditional_dependencies]
+diff --git a/src/ugrd/fs/mounts.toml b/src/ugrd/fs/mounts.toml
+index 55d22db..07ab6aa 100644
+--- a/src/ugrd/fs/mounts.toml
++++ b/src/ugrd/fs/mounts.toml
+@@ -48,7 +48,7 @@ late_fstab = "/etc/fstab.late"
+ [imports.functions]
+ "ugrd.fs.mounts" = [ "mount_root" ]
+ 
+-[imports.init_cleanup]
++[imports.init_final]
+ "ugrd.fs.mounts" = [ "umount_fstab" ]
+ 
+ [import_order.after]
+diff --git a/src/ugrd/initramfs_generator.py b/src/ugrd/initramfs_generator.py
+index 2b9ca2e..1a6850b 100644
+--- a/src/ugrd/initramfs_generator.py
++++ b/src/ugrd/initramfs_generator.py
+@@ -23,9 +23,7 @@ class InitramfsGenerator(GeneratorHelpers):
+         self.init_types = [
+             "init_debug",
+             "init_main",
+-            "init_late",
+             "init_mount",
+-            "init_cleanup",
+         ]
+ 
+         # Passed kwargs must be imported early, so they will be processed against the base configuration
+-- 
+2.48.1
+

@@ -1,0 +1,31 @@
+From 8f9bab5b97138211baae135c6235c58b36b6ecc2 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sat, 1 Feb 2025 12:12:30 -0600
+Subject: [PATCH 25/34] enable debug var after cmdline parsing, before
+ set_loglevel
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/debug.toml | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/ugrd/base/debug.toml b/src/ugrd/base/debug.toml
+index 758b79a..2a1a6bf 100644
+--- a/src/ugrd/base/debug.toml
++++ b/src/ugrd/base/debug.toml
+@@ -19,6 +19,12 @@ start_shell = true
+ [imports.init_debug]
+ "ugrd.base.debug" = [ "start_shell" ]
+ 
++[import_order.after]
++"enable_debug" = "parse_cmdline"
++
++[import_order.before]
++"enable_debug" = "set_loglevel"
++
+ [custom_parameters]
+ start_shell = "bool"  # Start a shell after init_early, before init_pre. Can be enabled by the debug cmdline option.
+ editor = "str"  # override editor variable
+-- 
+2.48.1
+

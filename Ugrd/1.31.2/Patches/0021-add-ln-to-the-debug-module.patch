@@ -1,0 +1,23 @@
+From 4a4a523bf89c1a231a13994881e43f5da690e124 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Fri, 31 Jan 2025 10:41:34 -0600
+Subject: [PATCH 21/34] add ln to the debug module
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/debug.toml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/ugrd/base/debug.toml b/src/ugrd/base/debug.toml
+index aefee18..758b79a 100644
+--- a/src/ugrd/base/debug.toml
++++ b/src/ugrd/base/debug.toml
+@@ -1,4 +1,4 @@
+-binaries = ['cp', 'mv', 'rm', 'find', 'grep', 'dmesg', 'chmod', 'touch']
++binaries = ['cp', 'ln', 'mv', 'rm', 'find', 'grep', 'dmesg', 'chmod', 'touch']
+ dependencies = [ "/usr/share/terminfo/l/linux" ] # required by most editors
+ # EDITOR is determined at build time using (in order):
+ # 1. editor config parameter
+-- 
+2.48.1
+

@@ -1,0 +1,26 @@
+From ebd56a7636a6938f39a686e61b7699907a9e6be6 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sat, 1 Feb 2025 13:33:51 -0600
+Subject: [PATCH 28/34] use printf instead of echo for readvar defaults
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/base.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/ugrd/base/base.py b/src/ugrd/base/base.py
+index 625c31a..116f8e6 100644
+--- a/src/ugrd/base/base.py
++++ b/src/ugrd/base/base.py
+@@ -211,7 +211,7 @@ def readvar(self) -> str:
+     The second arg can be a default value.
+     If no default is supplied, and the variable is not found, it returns an empty string.
+     """
+-    return 'cat "/run/vars/${1}" 2>/dev/null || echo "${2}"'
++    return 'cat "/run/vars/${1}" 2>/dev/null || printf "%s" "${2}"'
+ 
+ 
+ def check_var(self) -> str:
+-- 
+2.48.1
+

@@ -1,0 +1,115 @@
+From f2c70bdd5f879d6d2c43063e17a9ad1aa17dd11f Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sat, 25 Jan 2025 14:34:32 -0600
+Subject: [PATCH 11/34] Improve LVM order autodetection handling, logging, use
+ import_order
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/fs/lvm.py    | 23 ++++++++++++++++-------
+ src/ugrd/fs/lvm.toml  | 14 +++++++++-----
+ src/ugrd/fs/mounts.py | 10 ++++++++--
+ 3 files changed, 33 insertions(+), 14 deletions(-)
+
+diff --git a/src/ugrd/fs/lvm.py b/src/ugrd/fs/lvm.py
+index a46fe4b..79db52b 100644
+--- a/src/ugrd/fs/lvm.py
++++ b/src/ugrd/fs/lvm.py
+@@ -1,27 +1,36 @@
+ __author__ = "desultory"
+-__version__ = "1.5.1"
++__version__ = "2.1.0"
+ 
+-from zenlib.util import contains
++from zenlib.util import colorize, contains
+ 
+ 
+ def _process_lvm_multi(self, mapped_name: str, config: dict) -> None:
+     self.logger.debug("[%s] Processing LVM config: %s" % (mapped_name, config))
+     if "uuid" not in config:
+         raise ValueError("LVM config missing uuid: %s" % mapped_name)
++    if "holders" in config:
++        if not self["early_lvm"]:
++            self.logger.info(
++                "[%s] LVM volume has holders, enabling early_lvm: %s"
++                % (mapped_name, colorize(", ".join(config["holders"]), "cyan"))
++            )
++            self["early_lvm"] = True
+     self["lvm"][mapped_name] = config
+ 
+ 
+ @contains("early_lvm")
+-def early_init_lvm(self) -> None:
+-    """Returns shell lines to initialize LVM"""
+-    return init_lvm(self)
++@contains("lvm", "Skipping early LVM initialization, no LVM configurations found.", log_level=30)
++def early_lvm(self) -> str:
++    """If early_lvm is set, return a shell function to initialize LVM"""
++    return "init_lvm 'Early initialzing LVM'"
+ 
+ 
+-@contains("lvm", "Skipping LVM initialization, no LVM configurations found.")
++@contains("lvm", "Skipping LVM initialization, no LVM configurations found.", log_level=30)
+ def init_lvm(self) -> str:
+     """Returns a shell function to initialize LVM"""
+     return f"""
+-    einfo "[UGRD] Initializing LVM, ugrd.fs.lvm module version: {__version__}"
++    msg="${{1:-Initializing LVM}}"
++    einfo "[UGRD] "$msg", ugrd.fs.lvm module version: {__version__}"
+     einfo "$(vgchange -ay)"
+     einfo "$(vgscan --mknodes)"
+     """
+diff --git a/src/ugrd/fs/lvm.toml b/src/ugrd/fs/lvm.toml
+index 8b0926b..1e95e33 100644
+--- a/src/ugrd/fs/lvm.toml
++++ b/src/ugrd/fs/lvm.toml
+@@ -1,13 +1,17 @@
+ binaries = ['pvscan', 'vgscan', 'vgchange', 'lvscan']
+ 
+ [imports.config_processing]
+-"ugrd.fs.lvm" = [ "_process_lvm_multi" ]
++"ugrd.fs.lvm" = [ "_process_lvm_multi" ] 
+ 
+-[imports.init_early]
+-"ugrd.fs.lvm" = [ "early_init_lvm" ]
++[imports.init_main]
++"ugrd.fs.lvm" = [ "early_lvm", "init_lvm" ]
+ 
+-[imports.init_late]
+-"ugrd.fs.lvm" = [ "init_lvm" ]
++[import_order.before]
++"early_lvm" = "mount_fstab"
++
++[import_order.after]
++"early_lvm" = "md_init"
++"init_lvm" = ["early_lvm", "crypt_init"]
+ 
+ [custom_parameters]
+ early_lvm = "bool"  # Run an early lvm scan
+diff --git a/src/ugrd/fs/mounts.py b/src/ugrd/fs/mounts.py
+index 499bf40..ecd9322 100644
+--- a/src/ugrd/fs/mounts.py
++++ b/src/ugrd/fs/mounts.py
+@@ -540,11 +540,17 @@ def autodetect_lvm(self, source_dev, dm_num, blkid_info) -> None:
+         self.logger.info("Autodetected LVM mount, enabling the %s module." % colorize("lvm", "cyan"))
+         self["modules"] = "ugrd.fs.lvm"
+ 
++    lvm_config = {}
+     if uuid := blkid_info.get("uuid"):
+         self.logger.info("[%s] LVM volume contianer uuid: %s" % (source_dev.name, colorize(uuid, "cyan")))
+-        self["lvm"] = {self["_vblk_info"][dm_num]["name"]: {"uuid": uuid}}
++        lvm_config["uuid"] = uuid
+     else:
+-        raise AutodetectError("Failed to autodetect LVM volume uuid: %s" % source_dev.name)
++        raise AutodetectError("Failed to autodetect LVM volume uuid for device: %s" % colorize(source_dev.name, "red"))
++
++    if holders := self["_vblk_info"][dm_num]["holders"]:
++        lvm_config["holders"] = holders
++
++    self["lvm"] = {source_dev.name: lvm_config}
+ 
+ 
+ @contains("autodetect_root_luks", "Skipping LUKS autodetection, autodetect_root_luks is disabled.", log_level=30)
+-- 
+2.48.1
+

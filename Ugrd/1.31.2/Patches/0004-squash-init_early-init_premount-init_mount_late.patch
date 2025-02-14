@@ -1,0 +1,244 @@
+From 00c93a876985a34ca91e95fc4ece95b963b91ee0 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Mon, 3 Feb 2025 16:48:23 -0600
+Subject: [PATCH 04/34] squash init_early, init_premount, init_mount_late
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ docs/dev_manual.md              |  3 ---
+ src/ugrd/base/base.toml         |  5 ++++-
+ src/ugrd/base/cmdline.toml      |  4 ++++
+ src/ugrd/base/plymouth.toml     | 10 +++++++++-
+ src/ugrd/crypto/gpg.toml        |  8 +++++++-
+ src/ugrd/crypto/smartcard.toml  |  4 +++-
+ src/ugrd/fs/btrfs.toml          | 11 ++++++++++-
+ src/ugrd/fs/fakeudev.toml       |  5 ++++-
+ src/ugrd/fs/mdraid.toml         |  5 ++++-
+ src/ugrd/fs/mounts.toml         | 10 +++++++---
+ src/ugrd/fs/resume.toml         |  5 ++++-
+ src/ugrd/initramfs_generator.py |  3 ---
+ 12 files changed, 56 insertions(+), 17 deletions(-)
+
+diff --git a/docs/dev_manual.md b/docs/dev_manual.md
+index c209e0d..68fa0b3 100644
+--- a/docs/dev_manual.md
++++ b/docs/dev_manual.md
+@@ -84,12 +84,9 @@ Build imports are used to mutate config and build the base structure of the init
+ By default, the following init hooks are available:
+ * `init_pre` - Where the base initramfs environment is set up; basic mounts are initialized and the kernel cmdline is read.
+ * `init_debug` - Where a shell is started if `start_shell` is enabled in the debug module.
+-* `init_early` - Where early actions such as checking for device paths, mounting the fstab take place.
+ * `init_main` - Most important initramfs activities should take place here.
+ * `init_late` - Space for late initramfs actions, such as activating LVM volumes.
+-* `init_premount` - Where filesystem related commands such as `btrfs device scan` can run.
+ * `init_mount` - Where the root filesystem mount takes place
+-* `init_mount_late` - Where late mount actions such as mounting paths under the root filesystem can take place.
+ * `init_cleanup` - Currently unused, where cleanup before `switch_root` should take place.
+ * `init_final` - Where `switch_root` is executed.
+ 
+diff --git a/src/ugrd/base/base.toml b/src/ugrd/base/base.toml
+index 10e6c86..0a1e621 100644
+--- a/src/ugrd/base/base.toml
++++ b/src/ugrd/base/base.toml
+@@ -23,7 +23,7 @@ autodetect_init = true
+ [imports.build_tasks]
+ "ugrd.base.base" = [ "set_shebang", "export_switch_root_target" ]
+ 
+-[imports.init_early]
++[imports.init_pre]
+ "ugrd.base.base" = [ "set_loglevel" ]
+ 
+ [imports.init_final]
+@@ -34,6 +34,9 @@ autodetect_init = true
+                      "klog", "edebug", "einfo", "ewarn", "eerror",
+ 		     "rd_fail", "rd_restart", "_find_init" ]
+ 
++[import_order.after]
++set_loglevel = "parse_cmdline"
++
+ [custom_parameters]
+ switch_root_target = "Path"  # Specifies the location of the new root filesystem
+ init_target = "Path"  # Specifies the location of the system init file
+diff --git a/src/ugrd/base/cmdline.toml b/src/ugrd/base/cmdline.toml
+index f4febc3..0af50e9 100644
+--- a/src/ugrd/base/cmdline.toml
++++ b/src/ugrd/base/cmdline.toml
+@@ -11,6 +11,10 @@ cmdline_strings = ['init', 'loglevel']
+ [imports.functions]
+ "ugrd.base.cmdline" = [ "parse_cmdline_bool", "parse_cmdline_str" ]
+ 
++[import_order.after]
++export_exports = "make_run_dirs"
++parse_cmdline = "export_exports"
++
+ [custom_parameters]
+ exports = "dict"  # Add the exports property, used to specify the exports for the init script
+ cmdline_bools = "NoDupFlatList" # set the booleans to be procesed from /proc/cmdline
+diff --git a/src/ugrd/base/plymouth.toml b/src/ugrd/base/plymouth.toml
+index 7957ee8..edd1e45 100644
+--- a/src/ugrd/base/plymouth.toml
++++ b/src/ugrd/base/plymouth.toml
+@@ -22,9 +22,17 @@ path = "devpts"
+ [imports.build_tasks]
+ "ugrd.base.plymouth" = [ "pull_plymouth" ]
+ 
+-[imports.init_early]
++[imports.init_pre]
+ "ugrd.base.plymouth" = [ "make_devpts", "start_plymouth" ]
+ 
++[import_order.before]
++make_devpts = "start_plymouth"
++start_plymouth = "print_banner"
++
++[import_order.after]
++make_devpts = "mount_base"
++start_plymouth = ["parse_cmdline", "make_run_dirs", "load_modules"]
++
+ [custom_parameters]
+ plymouth_config = "Path"  # Path to the plymouth configuration file
+ plymouth_force_splash = "bool"  # Hardcode the splash argument into the plymouthd fake kernel cmdline
+diff --git a/src/ugrd/crypto/gpg.toml b/src/ugrd/crypto/gpg.toml
+index b3d993a..633a5a5 100644
+--- a/src/ugrd/crypto/gpg.toml
++++ b/src/ugrd/crypto/gpg.toml
+@@ -13,8 +13,14 @@ plymouth_key_command = "gpg --batch --pinentry-mode loopback --passphrase-fd 0 -
+ source = "/usr/bin/pinentry-tty"
+ target = "/usr/bin/pinentry"
+ 
+-[imports.init_early]
++[imports.init_main]
+ "ugrd.crypto.gpg" = [ "start_agent" ]
+ 
++[import_order.before]
++start_agent = "crypt_init"
++
++[import_order.after]
++start_agent = "mount_fstab"
++
+ [custom_parameters]
+ gpg_agent_args = "NoDupFlatList"  # Arguments to be passed to the gpg-agent
+diff --git a/src/ugrd/crypto/smartcard.toml b/src/ugrd/crypto/smartcard.toml
+index 670dac9..6e1c033 100644
+--- a/src/ugrd/crypto/smartcard.toml
++++ b/src/ugrd/crypto/smartcard.toml
+@@ -15,6 +15,8 @@ sc_public_key = "Path"  # The path to the public key to import
+ [imports.config_processing]
+ "ugrd.crypto.smartcard" = [ "_process_sc_public_key" ]
+ 
+-[imports.init_early]
++[imports.init_main]
+ "ugrd.crypto.smartcard" = [ "import_keys" ]
+ 
++[import_order.after]
++import_keys = "start_agent"
+diff --git a/src/ugrd/fs/btrfs.toml b/src/ugrd/fs/btrfs.toml
+index 81ea0f6..cb6c15d 100644
+--- a/src/ugrd/fs/btrfs.toml
++++ b/src/ugrd/fs/btrfs.toml
+@@ -11,9 +11,18 @@ autodetect_root_subvol = true
+ [imports.build_pre]
+ "ugrd.fs.btrfs" = [ "autodetect_root_subvol" ]
+ 
+-[imports.init_premount]
++[imports.init_mount]
+ "ugrd.fs.btrfs" = [ "btrfs_scan", "set_root_subvol", "select_subvol" ]
+ 
++[import_order.before]
++btrfs_scan = ["set_root_subvol", "mount_cmdline_root", "mount_root"]
++set_root_subvol = ["select_subvol", "mount_cmdline_root", "mount_root"]
++select_subvol = ["mount_cmdline_root", "mount_root"]
++
++[import_order.after]
++mount_cmdline_root = ["btrfs_scan"]
++mount_root = ["btrfs_scan"]
++
+ # Custom parameters
+ [custom_parameters]
+ _base_mount_path = "Path"  # Set the mount point for the root filesystem when used to check for subvols
+diff --git a/src/ugrd/fs/fakeudev.toml b/src/ugrd/fs/fakeudev.toml
+index 25f5b84..0a630e5 100644
+--- a/src/ugrd/fs/fakeudev.toml
++++ b/src/ugrd/fs/fakeudev.toml
+@@ -1,4 +1,7 @@
+ run_dirs = ['udev/data']
+ 
+-[imports.init_mount_late]
++[imports.init_mount]
+ 'ugrd.fs.fakeudev' = ['fake_dm_udev']
++
++[import_order.after]
++fake_dm_udev = ["mount_late", "mount_cmdline_root"]
+diff --git a/src/ugrd/fs/mdraid.toml b/src/ugrd/fs/mdraid.toml
+index 1354917..8b97967 100644
+--- a/src/ugrd/fs/mdraid.toml
++++ b/src/ugrd/fs/mdraid.toml
+@@ -1,5 +1,8 @@
+ binaries = ['mdadm']
+ dependencies = ['/etc/mdadm.conf']
+ 
+-[imports.init_early]
++[imports.init_main]
+ "ugrd.fs.mdraid" = [ "md_init" ]
++
++[import_order.before]
++md_init = "mount_fstab"
+diff --git a/src/ugrd/fs/mounts.toml b/src/ugrd/fs/mounts.toml
+index f345a8e..55d22db 100644
+--- a/src/ugrd/fs/mounts.toml
++++ b/src/ugrd/fs/mounts.toml
+@@ -42,15 +42,19 @@ late_fstab = "/etc/fstab.late"
+ [imports.init_main]
+ "ugrd.fs.mounts" = [ "mount_fstab" ]
+ 
++[imports.init_mount]
++"ugrd.fs.mounts" = [ "mount_late" ]
++
+ [imports.functions]
+ "ugrd.fs.mounts" = [ "mount_root" ]
+ 
+-[imports.init_mount_late]
+-"ugrd.fs.mounts" = [ "mount_late" ]
+-
+ [imports.init_cleanup]
+ "ugrd.fs.mounts" = [ "umount_fstab" ]
+ 
++[import_order.after]
++mount_late = ["mount_root", "mount_cmdline_root"]
++make_run_dirs = "mount_base"
++
+ [custom_parameters]
+ mounts = "dict"  # Add the mounts property, used to define the mounts to be made in the fstab
+ run_dirs = "NoDupFlatList"  # A list of directories to be created under /run
+diff --git a/src/ugrd/fs/resume.toml b/src/ugrd/fs/resume.toml
+index c4732dd..18ba306 100644
+--- a/src/ugrd/fs/resume.toml
++++ b/src/ugrd/fs/resume.toml
+@@ -1,4 +1,7 @@
+ cmdline_strings = [ "resume" ]
+ 
+-[imports.init_early] 
++[imports.init_main] 
+ "ugrd.fs.resume" = [ "handle_resume" ]
++
++[import_order.before]
++handle_resume = "mount_fstab"
+diff --git a/src/ugrd/initramfs_generator.py b/src/ugrd/initramfs_generator.py
+index ae39d34..2b9ca2e 100644
+--- a/src/ugrd/initramfs_generator.py
++++ b/src/ugrd/initramfs_generator.py
+@@ -22,12 +22,9 @@ class InitramfsGenerator(GeneratorHelpers):
+         # init_pre and init_final are run as part of generate_initramfs_main
+         self.init_types = [
+             "init_debug",
+-            "init_early",
+             "init_main",
+             "init_late",
+-            "init_premount",
+             "init_mount",
+-            "init_mount_late",
+             "init_cleanup",
+         ]
+ 
+-- 
+2.48.1
+

@@ -1,0 +1,35 @@
+From 0084f9f584bfb6847948147dfb9364b03ef71de6 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sun, 2 Feb 2025 14:08:29 -0600
+Subject: [PATCH 30/34] log command stderr and stdout on timeout
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/generator_helpers.py | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/ugrd/generator_helpers.py b/src/ugrd/generator_helpers.py
+index c17f28e..559e005 100644
+--- a/src/ugrd/generator_helpers.py
++++ b/src/ugrd/generator_helpers.py
+@@ -5,7 +5,7 @@ from typing import Union
+ 
+ from zenlib.util import colorize, pretty_print
+ 
+-__version__ = "1.6.0"
++__version__ = "1.6.1"
+ __author__ = "desultory"
+ 
+ 
+@@ -202,6 +202,8 @@ class GeneratorHelpers:
+         try:
+             cmd = run(cmd_args, capture_output=True, timeout=timeout)
+         except TimeoutExpired as e:
++            self.logger.error("Command output:\n%s" % e.stdout.decode())
++            self.logger.error("Command error:\n%s" % e.stderr.decode())
+             raise RuntimeError("[%ds] Command timed out: %s" % (timeout, [str(arg) for arg in cmd_args])) from e
+ 
+         if cmd.returncode != 0:
+-- 
+2.48.1
+

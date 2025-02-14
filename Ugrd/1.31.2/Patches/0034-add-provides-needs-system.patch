@@ -1,0 +1,117 @@
+From dca6007ccb03b6783fc61887280c19c9f4e5c40f Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Mon, 3 Feb 2025 16:00:49 -0600
+Subject: [PATCH 34/34] add provides/needs system
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ docs/dev_manual.md         |  9 +++++++++
+ src/ugrd/fs/mounts.toml    |  2 ++
+ src/ugrd/initramfs_dict.py | 18 +++++++++++++++++-
+ src/ugrd/net/dhcpcd.toml   |  2 ++
+ src/ugrd/net/static.toml   |  1 +
+ 5 files changed, 31 insertions(+), 1 deletion(-)
+
+diff --git a/docs/dev_manual.md b/docs/dev_manual.md
+index 26cc7aa..513a074 100644
+--- a/docs/dev_manual.md
++++ b/docs/dev_manual.md
+@@ -204,3 +204,12 @@ This module is loaded in the imports section of the `base.yaml` file:
+ "ugrd.fs.mounts" = [ "_process_mounts_multi" ]
+ ```
+ 
++## Provides/needs
++
++Modules can provide/need a certain "tag" to be set by other modules.
++
++If a module has a `provides` string or list of strings, those will be added to config["provided"].
++When a module has a `needs` string or list of strings, those will be checked against config["provided"].
++
++Needed tags are checked after module imports and before any module config. Provided tags are set upon successful module import.
++
+diff --git a/src/ugrd/fs/mounts.toml b/src/ugrd/fs/mounts.toml
+index 3a8e1bc..e203d7f 100644
+--- a/src/ugrd/fs/mounts.toml
++++ b/src/ugrd/fs/mounts.toml
+@@ -7,6 +7,8 @@ binaries = [
+   "mkdir",
+ ]
+ 
++provides = "mounts" 
++
+ cmdline_strings =  ["root", "roottype", "rootflags", "rootdelay" ]
+ cmdline_bools = ["no_fsck"]
+ 
+diff --git a/src/ugrd/initramfs_dict.py b/src/ugrd/initramfs_dict.py
+index caa6a5c..9556165 100644
+--- a/src/ugrd/initramfs_dict.py
++++ b/src/ugrd/initramfs_dict.py
+@@ -31,6 +31,7 @@ class InitramfsConfigDict(UserDict):
+ 
+     builtin_parameters = {
+         "modules": NoDupFlatList,  # A list of the names of modules which have been loaded, mostly used for dependency checking
++        "provided": NoDupFlatList,  # A list of tags provided by modules
+         "imports": dict,  # A dict of functions to be imported into the initramfs, under their respective hooks
+         "import_order": dict,  # A dict containing order requirements for imports
+         "validated": bool,  # A flag to indicate if the config has been validated, mostly used for log levels
+@@ -348,13 +349,24 @@ class InitramfsConfigDict(UserDict):
+             self.logger.debug("[%s] Processing imports: %s" % (module, imports))
+             self["imports"] = imports
+ 
++        if needs := module_config.get("needs"):
++            if isinstance(needs, str):
++                if needs not in self["provided"]:
++                    raise ValueError("[%s] Required tag not provided: %s" % (module, needs))
++            elif isinstance(needs, list):
++                for need in needs:
++                    if need not in self["provided"]:
++                        raise ValueError("[%s] Required tag not provided: %s" % (module, need))
++            else:
++                raise ValueError("[%s] Invalid needs value: %s" % (module, needs))
++
+         custom_parameters = module_config.get("custom_parameters", {})
+         if custom_parameters:
+             self.logger.debug("[%s] Processing custom parameters: %s" % (module, custom_parameters))
+             self["custom_parameters"] = custom_parameters
+ 
+         for name, value in module_config.items():  # Process config values, in order they are defined
+-            if name in ["imports", "custom_parameters"]:
++            if name in ["imports", "custom_parameters", "provides", "needs"]:
+                 self.logger.log(5, "[%s] Skipping '%s'" % (module, name))
+                 continue
+             self.logger.debug("[%s] (%s) Setting value: %s" % (module, name, value))
+@@ -367,6 +379,10 @@ class InitramfsConfigDict(UserDict):
+         # Append the module to the list of loaded modules, avoid recursion
+         self["modules"].append(module)
+ 
++        if provides := module_config.get("provides"):  # Handle provided tags last
++            self.logger.debug("[%s] Provided: %s" % (module, provides))
++            self["provided"] = provides
++
+     def validate(self) -> None:
+         """Validate config, checks that all values are processed, sets validated flag."""
+         if self["_processing"]:
+diff --git a/src/ugrd/net/dhcpcd.toml b/src/ugrd/net/dhcpcd.toml
+index 3abaa98..b60eb5b 100644
+--- a/src/ugrd/net/dhcpcd.toml
++++ b/src/ugrd/net/dhcpcd.toml
+@@ -1,4 +1,6 @@
+ modules = [ "ugrd.net.net" ]
++provides = "net"
++
+ binaries = [ "dhcpcd" ]
+ 
+ [imports.init_pre]
+diff --git a/src/ugrd/net/static.toml b/src/ugrd/net/static.toml
+index 897ef5a..ce7ebc7 100644
+--- a/src/ugrd/net/static.toml
++++ b/src/ugrd/net/static.toml
+@@ -1,4 +1,5 @@
+ modules = [ "ugrd.net.net" ]
++provides = "net"
+ 
+ autodetect_ip = true
+ autodetect_gateway = true
+-- 
+2.48.1
+

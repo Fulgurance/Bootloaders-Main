@@ -1,0 +1,53 @@
+From b7c57b237cbb9e156dbaf2f38c7c4d71bee93098 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Mon, 27 Jan 2025 16:53:32 -0600
+Subject: [PATCH 17/34] add check that the switch root function is the last in
+ init_final
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/base.py   | 9 ++++++++-
+ src/ugrd/base/base.toml | 2 +-
+ 2 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/src/ugrd/base/base.py b/src/ugrd/base/base.py
+index 33d3c55..625c31a 100644
+--- a/src/ugrd/base/base.py
++++ b/src/ugrd/base/base.py
+@@ -1,5 +1,5 @@
+ __author__ = "desultory"
+-__version__ = "6.6.1"
++__version__ = "6.6.2"
+ 
+ from pathlib import Path
+ from shutil import which
+@@ -96,6 +96,13 @@ def set_loglevel(self) -> str:
+     return "readvar loglevel > /proc/sys/kernel/printk"
+ 
+ 
++@contains("validate", "Skipping switch_root validation, as validation is disabled.", log_level=30)
++def check_switch_root_last(self) -> None:
++    """Validates that do_switch_root is the last function in init_final"""
++    if not self["imports"]["init_final"][-1].__name__ == "do_switch_root":
++        raise ValidationError("do_switch_root must be the last function in init_final.")
++
++
+ def do_switch_root(self) -> str:
+     """Should be the final statement, switches root.
+     Ensures it is PID 1, and that the init_target exists.
+diff --git a/src/ugrd/base/base.toml b/src/ugrd/base/base.toml
+index 5db5566..1eaa022 100644
+--- a/src/ugrd/base/base.toml
++++ b/src/ugrd/base/base.toml
+@@ -38,7 +38,7 @@ autodetect_init = true
+ 		     "rd_fail", "rd_restart", "_find_init" ]
+ 
+ [imports.checks]
+-"ugrd.base.base" = [ "check_init_target" ]
++"ugrd.base.base" = [ "check_init_target", "check_switch_root_last" ]
+ 
+ [import_order.after]
+ set_loglevel = "parse_cmdline"
+-- 
+2.48.1
+

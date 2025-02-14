@@ -1,0 +1,214 @@
+From 24c57a0ccaa8f171fc30ddfae7cd2dde793902c6 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sun, 2 Feb 2025 14:32:27 -0600
+Subject: [PATCH 31/34] use /run/ugrd instead of /run/vars
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/base/base.py         | 10 +++++-----
+ src/ugrd/crypto/cryptsetup.py | 22 +++++++++++-----------
+ src/ugrd/fs/btrfs.py          | 16 ++++++++--------
+ src/ugrd/fs/mounts.py         |  2 +-
+ src/ugrd/fs/mounts.toml       |  2 +-
+ 5 files changed, 26 insertions(+), 26 deletions(-)
+
+diff --git a/src/ugrd/base/base.py b/src/ugrd/base/base.py
+index 33883eb..1838009 100644
+--- a/src/ugrd/base/base.py
++++ b/src/ugrd/base/base.py
+@@ -1,5 +1,5 @@
+ __author__ = "desultory"
+-__version__ = "6.6.3"
++__version__ = "6.6.4"
+ 
+ from pathlib import Path
+ from shutil import which
+@@ -197,21 +197,21 @@ def rd_fail(self) -> list[str]:
+ 
+ 
+ def setvar(self) -> str:
+-    """Returns a shell function that sets a variable in /run/vars/{name}."""
++    """Returns a shell function that sets a variable in /run/ugrd/{name}."""
+     return """
+     if check_var debug; then
+         edebug "Setting $1 to $2"
+     fi
+-    printf "%s" "$2" > "/run/vars/${1}"
++    printf "%s" "$2" > "/run/ugrd/${1}"
+     """
+ 
+ 
+ def readvar(self) -> str:
+-    """Returns a shell function that reads a variable from /run/vars/{name}.
++    """Returns a shell function that reads a variable from /run/ugrd/{name}.
+     The second arg can be a default value.
+     If no default is supplied, and the variable is not found, it returns an empty string.
+     """
+-    return 'cat "/run/vars/${1}" 2>/dev/null || printf "%s" "${2}"'
++    return 'cat "/run/ugrd/${1}" 2>/dev/null || printf "%s" "${2}"'
+ 
+ 
+ def check_var(self) -> str:
+diff --git a/src/ugrd/crypto/cryptsetup.py b/src/ugrd/crypto/cryptsetup.py
+index 8db4438..b2ad17c 100644
+--- a/src/ugrd/crypto/cryptsetup.py
++++ b/src/ugrd/crypto/cryptsetup.py
+@@ -1,5 +1,5 @@
+ __author__ = "desultory"
+-__version__ = "4.0.3"
++__version__ = "4.0.4"
+ 
+ from pathlib import Path
+ 
+@@ -465,9 +465,9 @@ def open_crypt_dev(self) -> str:
+         einfo "[$1] Opening cryptsetup device with detached header: $header"
+         cryptsetup_args="$cryptsetup_args --header $header"
+     fi
+-    if [ -e /run/vars/key_data ]; then
+-        einfo "[$1] Unlocking with key data from: /run/vars/key_data"
+-        cryptsetup_args="$cryptsetup_args --key-file /run/vars/key_data"
++    if [ -e /run/ugrd/key_data ]; then
++        einfo "[$1] Unlocking with key data from: /run/ugrd/key_data"
++        cryptsetup_args="$cryptsetup_args --key-file /run/ugrd/key_data"
+     elif [ -n "$2" ]; then
+         einfo "[$1] Unlocking with key file: $2"
+         cryptsetup_args="$cryptsetup_args --key-file $2"
+@@ -502,7 +502,7 @@ def _open_crypt_dev(self, name: str, parameters: dict) -> list[str]:
+     plymouth_key_command = parameters.get("plymouth_key_command") if "ugrd.base.plymouth" in self["modules"] else None
+ 
+     _key_command_lines = f"""    einfo "($i/$retries)[{name}] Running key command: {key_command}"
+-    if ! {key_command} > /run/vars/key_data; then
++    if ! {key_command} > /run/ugrd/key_data; then
+         ewarn 'Failed to run key command: {key_command}'
+         {reset_command}
+         continue
+@@ -510,12 +510,12 @@ def _open_crypt_dev(self, name: str, parameters: dict) -> list[str]:
+ 
+     if key_command:
+         self.logger.debug("[%s] Using key command: %s" % (name, key_command))
+-        out += ["    rm -f /run/vars/key_data"]  # Remove the key data file if it exists
++        out += ["    rm -f /run/ugrd/key_data"]  # Remove the key data file if it exists
+         if plymouth_key_command:
+             self.logger.debug("[%s] Using plymouth key command: %s" % (name, plymouth_key_command))
+             out += [
+                 "    if plymouth --ping; then",
+-                f'        if ! plymouth ask-for-password --prompt "[${{i}} / ${{retries}}] Enter passphrase to unlock key for: {name}" --command "{parameters["plymouth_key_command"]}" --number-of-tries 1 > /run/vars/key_data; then',
++                f'        if ! plymouth ask-for-password --prompt "[${{i}} / ${{retries}}] Enter passphrase to unlock key for: {name}" --command "{parameters["plymouth_key_command"]}" --number-of-tries 1 > /run/ugrd/key_data; then',
+                 *[f"            {line}" for line in reset_lines],
+                 "        fi",
+                 "    else",
+@@ -527,7 +527,7 @@ def _open_crypt_dev(self, name: str, parameters: dict) -> list[str]:
+         out += [  # open_crypt_dev will use the key data file if it exists
+             f'    einfo "($i/$retries)[{name}] Unlocked key to var: key_data"',
+             f"    if open_crypt_dev {name}; then",
+-            "        rm -f /run/vars/key_data",  # Remove the key data file after opening the device
++            "        rm -f /run/ugrd/key_data",  # Remove the key data file after opening the device
+         ]
+     elif key_file:  # For plain key files, just use it as arg 2 for open_crypt_dev
+         out += [
+@@ -538,7 +538,7 @@ def _open_crypt_dev(self, name: str, parameters: dict) -> list[str]:
+         if "ugrd.base.plymouth" in self["modules"]:
+             out += [  # When plymouth is used, write the entered key to the key data file, where it will be used by open_crypt_dev
+                 "    if plymouth --ping; then",
+-                f'        plymouth ask-for-password --prompt "[${{i}} / ${{retries}}] Enter passphrase to unlock: {name}" > /run/vars/key_data',
++                f'        plymouth ask-for-password --prompt "[${{i}} / ${{retries}}] Enter passphrase to unlock: {name}" > /run/ugrd/key_data',
+                 "    fi",
+                 f'    einfo "($i/$retries) Unlocking device: {name}"',
+                 f"    if open_crypt_dev {name}; then",
+@@ -554,9 +554,9 @@ def _open_crypt_dev(self, name: str, parameters: dict) -> list[str]:
+ 
+     out += [
+         "done",
+-        "if [ -e /run/vars/key_data ]; then",
++        "if [ -e /run/ugrd/key_data ]; then",
+         "    eerror 'Removing leftover key data file'",
+-        "    rm -f /run/vars/key_data",
++        "    rm -f /run/ugrd/key_data",
+         "fi",
+     ]
+ 
+diff --git a/src/ugrd/fs/btrfs.py b/src/ugrd/fs/btrfs.py
+index e8b129d..1dcefc9 100644
+--- a/src/ugrd/fs/btrfs.py
++++ b/src/ugrd/fs/btrfs.py
+@@ -1,11 +1,11 @@
+-__version__ = "2.0.0"
++__version__ = "2.0.1"
+ __author__ = "desultory"
+ 
+ from pathlib import Path
+ 
+ from ugrd import ValidationError
+ from ugrd.fs.mounts import _resolve_overlay_lower_dir
+-from zenlib.util import contains, unset, colorize
++from zenlib.util import colorize, contains, unset
+ 
+ 
+ class SubvolNotFound(Exception):
+@@ -103,26 +103,26 @@ def select_subvol(self) -> str:
+     # TODO: Figure out a way to make the case prompt more standard
+     return f"""
+     mount -t btrfs -o subvolid=5,ro $(readvar MOUNTS_ROOT_SOURCE) {self["_base_mount_path"]}
+-    if [ -z "$(btrfs subvolume list -o {self['_base_mount_path']})" ]; then
+-        ewarn "Failed to list btrfs subvolumes for root volume: {self['_base_mount_path']}"
++    if [ -z "$(btrfs subvolume list -o {self["_base_mount_path"]})" ]; then
++        ewarn "Failed to list btrfs subvolumes for root volume: {self["_base_mount_path"]}"
+     else
+         echo 'Select a subvolume to use as root'
+         PS3='Subvolume: '
+-        select subvol in $(btrfs subvolume list -o {self['_base_mount_path']} " + "| awk '{{print $9}}'); do
++        select subvol in $(btrfs subvolume list -o {self["_base_mount_path"]} " + "| awk '{{print $9}}'); do
+         case $subvol in
+             *)
+                 if [[ -z $subvol ]]; then
+                     ewarn 'Invalid selection'
+                 else
+                     einfo "Selected subvolume: $subvol"
+-                    printf "%s" ",subvol=$subvol" >> /run/vars/MOUNTS_ROOT_OPTIONS
++                    printf "%s" ",subvol=$subvol" >> /run/ugrd/MOUNTS_ROOT_OPTIONS  # append, don't overwrite
+                     break
+                 fi
+                 ;;
+             esac
+         done
+     fi
+-    umount -l {self['_base_mount_path']}
++    umount -l {self["_base_mount_path"]}
+     """
+ 
+ 
+@@ -130,4 +130,4 @@ def select_subvol(self) -> str:
+ def set_root_subvol(self) -> str:
+     """Adds the root_subvol to the root_mount options."""
+     _validate_root_subvol(self)
+-    return f"""printf ",subvol={self['root_subvol']}" >> /run/vars/MOUNTS_ROOT_OPTIONS"""
++    return f"""printf ",subvol={self["root_subvol"]}" >> /run/ugrd/MOUNTS_ROOT_OPTIONS"""
+diff --git a/src/ugrd/fs/mounts.py b/src/ugrd/fs/mounts.py
+index e45d810..31dfbda 100644
+--- a/src/ugrd/fs/mounts.py
++++ b/src/ugrd/fs/mounts.py
+@@ -683,7 +683,7 @@ def autodetect_mounts(self) -> None:
+ 
+ def mount_base(self) -> list[str]:
+     """Generates mount commands for the base mounts.
+-    Must be run before variables are used, as it creates the /run/vars directory.
++    Must be run before variables are used, as it creates the /run/ugrd directory.
+     """
+     out = []
+     for mount_name, mount_info in self["mounts"].items():
+diff --git a/src/ugrd/fs/mounts.toml b/src/ugrd/fs/mounts.toml
+index c868550..3a8e1bc 100644
+--- a/src/ugrd/fs/mounts.toml
++++ b/src/ugrd/fs/mounts.toml
+@@ -10,7 +10,7 @@ binaries = [
+ cmdline_strings =  ["root", "roottype", "rootflags", "rootdelay" ]
+ cmdline_bools = ["no_fsck"]
+ 
+-run_dirs = [ "vars" ]
++run_dirs = [ "ugrd" ]
+ 
+ mount_timeout = 1
+ autodetect_root = true
+-- 
+2.48.1
+
