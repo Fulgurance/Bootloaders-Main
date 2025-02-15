@@ -1,7 +1,7 @@
 From 6f7017d51f54534d3e6d7aea3e1e481659a9f30f Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 8 Feb 2025 10:34:54 -0600
-Subject: [PATCH 37/49] don't run mount_fstab if a fstab is not in the
+Subject: [PATCH 37/50] don't run mount_fstab if a fstab is not in the
  initramfs
 
 since config changes should not be made in the init runlevel, and even

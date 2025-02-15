@@ -1,0 +1,159 @@
+From 0e29a3c94a9fd895149741ec35d80021bb37e627 Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Sat, 15 Feb 2025 12:54:53 -0600
+Subject: [PATCH 50/50] improve livecd module to take dynamic labels/squashfs
+ targets
+
+also add a cmdline arg for setting the squashfs image name
+add improved checks for runtime usage
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/fs/livecd.py      | 68 +++++++++++++++++++++++++++++---------
+ src/ugrd/fs/livecd.toml    | 12 ++++++-
+ src/ugrd/fs/overlayfs.toml |  3 ++
+ src/ugrd/main.py           |  1 +
+ 4 files changed, 67 insertions(+), 17 deletions(-)
+
+diff --git a/src/ugrd/fs/livecd.py b/src/ugrd/fs/livecd.py
+index 1a87af1..5ba3bf5 100644
+--- a/src/ugrd/fs/livecd.py
++++ b/src/ugrd/fs/livecd.py
+@@ -1,26 +1,36 @@
+ __author__ = "desultory"
+-__version__ = "0.5.2"
++__version__ = "0.6.0"
+ 
+ from zenlib.util import contains
+ 
+ 
+-@contains("livecd_label", "livecd_label must be set to the label of the livecd.", raise_exception=True)
+-def generate_livecd_mount(self):
+-    """Makes the mounts entry for livecd base."""
+-    self["mounts"] = {
+-        "livecd": {
+-            "label": self.livecd_label,
+-            "destination": "/run/livecd",
+-            "no_validate": True,
+-            "no_umount": True,
+-            "options": ["ro"],
+-        }
+-    }
++@contains("livecd_label", "livecd_label must be set to the label of the livecd storage root.", raise_exception=True)
++def mount_livecd(self) -> str:
++    """Returns shell lines to mount the livecd storage root.
++    exports the set livecd_label,
++    if a livecd_label cmdline arg is passed, uses that value instead of the exported value
+ 
++    Because this mount is made manulally, no mount entry/validation/unmounting is done
++    All mount handling happens strictly at runtime
++    """
++    return """
++    livecd_label="$(readvar livecd_label)"
++    if [ -z "$livecd_label" ]; then
++        rd_fail "livecd_label must be set to the label of the livecd storage root."
++    fi
++    einfo "Mounting livecd with label: $livecd_label"
++    mount LABEL="$livecd_label" /run/livecd || rd_fail "Failed to mount livecd with label: $livecd_label"
++    """
+ 
+-@contains("squashfs_image", "squashfs_image must be set to the path of the squashfs image to mount.", raise_exception=True)
+-def set_squashfs_mount(self):
+-    """Updates the root mount entry to use the squashfs image."""
++
++@contains("livecd_label", "livecd_label must be set to the label of the livecd storage root.", raise_exception=True)
++@contains(
++    "squashfs_image", "squashfs_image must be set to the path of the livecd squashfs image.", raise_exception=True
++)
++def set_livecd_mount(self):
++    """Updates the root mount entry to use the squashfs image.
++    Adds an export for the livecd_label.
++    """
+     self["mounts"] = {
+         "root": {
+             "type": "squashfs",
+@@ -29,3 +39,29 @@ def set_squashfs_mount(self):
+             "no_validate": True,
+         }
+     }
++    self["exports"]["livecd_label"] = self.livecd_label
++
++
++def set_squashfs_root_source(self) -> str:
++    """Returns shell lines to set MOUNTS_ROOT_SOURCE to the squashfs_image if set,
++    otherwise checks that the built-in squashfs source exists."""
++    return """
++    root_source="$(readvar MOUNTS_ROOT_SOURCE)"
++    squashfs_image_name="$(readvar squashfs_image)"
++    squashfs_image="/run/livecd/$squashfs_image_name"
++    if [ -n "$squashfs_image_name" ]; then
++        if [ -e "$squashfs_image" ]; then
++            einfo "Using squashfs image set by the kernel commandline: $squashfs_image"
++            setvar MOUNTS_ROOT_SOURCE "$squashfs_image"
++            return
++        else
++            ewarn "Squashfs image does not exist: $squashfs_image"
++        fi
++    fi
++    if [ -e "$root_source" ]; then
++        einfo "Using squashfs image set in MOUNTS_ROOT_SOURCE: $root_source"
++    else
++        rd_fail "Squashfs image does not exist: $squashfs_image"
++    fi
++    """
++
+diff --git a/src/ugrd/fs/livecd.toml b/src/ugrd/fs/livecd.toml
+index a16c8c3..acab9a7 100644
+--- a/src/ugrd/fs/livecd.toml
++++ b/src/ugrd/fs/livecd.toml
+@@ -1,5 +1,7 @@
+ modules = ["ugrd.fs.overlayfs"]
+ 
++cmdline_strings = [ "livecd_label", "squashfs_image" ]
++
+ squashfs_image = 'image.squashfs'
+ hostonly = false
+ 
+@@ -9,7 +11,15 @@ run_dirs = ['livecd']
+ test_copy_config = ["squashfs_image", "livecd_label"]
+ 
+ [imports.build_pre]
+-"ugrd.fs.livecd" = ["generate_livecd_mount", "set_squashfs_mount"]
++"ugrd.fs.livecd" = [ "set_livecd_mount" ]
++
++[imports.init_mount]
++"ugrd.fs.livecd" = [ "mount_livecd", "set_squashfs_root_source" ]
++
++[import_order.before]
++"set_squashfs_root_source" = "mount_root"  # The squashfs must be mounted before the root (overlay)
++"mount_livecd" = "set_squashfs_root_source"  # The root source should be checked before mounting
++
+ 
+ [custom_parameters]
+ squashfs_image = "Path"  # the path to the squashfs image (at runtime)
+diff --git a/src/ugrd/fs/overlayfs.toml b/src/ugrd/fs/overlayfs.toml
+index 27a4283..ecfab2c 100644
+--- a/src/ugrd/fs/overlayfs.toml
++++ b/src/ugrd/fs/overlayfs.toml
+@@ -6,3 +6,6 @@ run_dirs = ["upperdir", "workdir", "lowerdir"]
+ 
+ [imports.init_mount]
+ "ugrd.fs.overlayfs" = ["mount_overlayfs"]
++
++[import_order.after]
++"mount_overlayfs" = ["mount_root"]
+diff --git a/src/ugrd/main.py b/src/ugrd/main.py
+index 90f8a78..240ff94 100755
+--- a/src/ugrd/main.py
++++ b/src/ugrd/main.py
+@@ -133,6 +133,7 @@ def main():
+             "help": "Tests the image with qemu using a specific kernel file.",
+         },
+         {"flags": ["--livecd-label"], "action": "store", "help": "Sets the label for the livecd"},
++        {"flags": ["--squashfs-image"], "action": "store", "help": "Sets the filename for the livede squashfs image"},
+         {
+             "flags": ["--force-out"],
+             "action": "store_true",
+-- 
+2.48.1
+

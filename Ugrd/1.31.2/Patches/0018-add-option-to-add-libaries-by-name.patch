@@ -1,7 +1,7 @@
 From 324a39133180012ca597b09211242e317c1f1ccc Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Fri, 31 Jan 2025 10:28:48 -0600
-Subject: [PATCH 18/49] add option to add libaries by name
+Subject: [PATCH 18/50] add option to add libaries by name
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

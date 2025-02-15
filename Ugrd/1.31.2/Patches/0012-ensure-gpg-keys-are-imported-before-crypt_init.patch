@@ -1,7 +1,7 @@
 From bff6e87cce44b0d1dfde14c6c796428d67ef6ac9 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Mon, 27 Jan 2025 13:38:28 -0600
-Subject: [PATCH 12/49] ensure gpg keys are imported before crypt_init
+Subject: [PATCH 12/50] ensure gpg keys are imported before crypt_init
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

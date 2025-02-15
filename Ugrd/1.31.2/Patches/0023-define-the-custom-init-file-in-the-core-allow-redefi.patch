@@ -1,7 +1,7 @@
 From 79fc29baf213457998ffa5375fea6d4b3727e272 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 1 Feb 2025 11:20:03 -0600
-Subject: [PATCH 23/49] define the custom init file in the core, allow
+Subject: [PATCH 23/50] define the custom init file in the core, allow
  redefinition
 
 Signed-off-by: Zen <z@pyl.onl>

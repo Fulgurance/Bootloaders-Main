@@ -1,7 +1,7 @@
 From 8b1e1cccddde9b4a760efb89a020895bf41600b3 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sun, 2 Feb 2025 14:38:40 -0600
-Subject: [PATCH 32/49] use exported version instead of hardcoding with a
+Subject: [PATCH 32/50] use exported version instead of hardcoding with a
  fstring
 
 Signed-off-by: Zen <z@pyl.onl>
