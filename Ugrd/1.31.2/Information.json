@@ -17,7 +17,7 @@
       "port": "BaseLibraries-Main",
       "name": "Zenlib",
       "version": ">=3.1.5",
-      "options": []
+      "options": ["Python-3.12"]
     },
     {
       "port": "BaseLibraries-Main",
