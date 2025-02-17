@@ -1,7 +1,7 @@
 From 94b84ffad3d494239ceeaf0f53e020f6b104dd0f Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Fri, 14 Feb 2025 16:32:43 -0600
-Subject: [PATCH 49/50] detect and add binary search paths
+Subject: [PATCH 49/58] detect and add binary search paths
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

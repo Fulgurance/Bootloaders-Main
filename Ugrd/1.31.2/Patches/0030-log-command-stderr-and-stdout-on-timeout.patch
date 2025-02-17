@@ -1,7 +1,7 @@
 From 0084f9f584bfb6847948147dfb9364b03ef71de6 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sun, 2 Feb 2025 14:08:29 -0600
-Subject: [PATCH 30/50] log command stderr and stdout on timeout
+Subject: [PATCH 30/58] log command stderr and stdout on timeout
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

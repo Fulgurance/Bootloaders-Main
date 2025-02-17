@@ -1,7 +1,7 @@
 From a7c1e8140ca2d540e18f341280b12d7370b74828 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sun, 26 Jan 2025 14:49:46 -0600
-Subject: [PATCH 10/50] simplify mount functions, improve logging, make root
+Subject: [PATCH 10/58] simplify mount functions, improve logging, make root
  mount try until user input
 
 Signed-off-by: Zen <z@pyl.onl>

@@ -1,0 +1,26 @@
+From b684ea10fc6a6ee910a6d77986910e967ab8c11d Mon Sep 17 00:00:00 2001
+From: Zen <z@pyl.onl>
+Date: Mon, 17 Feb 2025 12:44:49 -0600
+Subject: [PATCH 53/58] fix regression, re-add mount_late to init_mount
+
+Signed-off-by: Zen <z@pyl.onl>
+---
+ src/ugrd/fs/mounts.toml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/ugrd/fs/mounts.toml b/src/ugrd/fs/mounts.toml
+index 652cc53..68b9ec3 100644
+--- a/src/ugrd/fs/mounts.toml
++++ b/src/ugrd/fs/mounts.toml
+@@ -48,7 +48,7 @@ late_fstab = "/etc/fstab.late"
+ "ugrd.fs.mounts" = [ "mount_fstab" ]
+ 
+ [imports.init_mount]
+-"ugrd.fs.mounts" = [ "mount_root" ]
++"ugrd.fs.mounts" = [ "mount_root", "mount_late" ]
+ 
+ [imports.functions]
+ "ugrd.fs.mounts" = [ "mount_default_root" ]
+-- 
+2.48.1
+

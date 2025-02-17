@@ -1,7 +1,7 @@
 From b7c57b237cbb9e156dbaf2f38c7c4d71bee93098 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Mon, 27 Jan 2025 16:53:32 -0600
-Subject: [PATCH 17/50] add check that the switch root function is the last in
+Subject: [PATCH 17/58] add check that the switch root function is the last in
  init_final
 
 Signed-off-by: Zen <z@pyl.onl>

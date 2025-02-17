@@ -1,7 +1,7 @@
 From 280e4d6a73c0215536f16f4b8ea3816d929cb476 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sun, 9 Feb 2025 11:12:47 -0600
-Subject: [PATCH 39/50] don't actually use lspci
+Subject: [PATCH 39/58] don't actually use lspci
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

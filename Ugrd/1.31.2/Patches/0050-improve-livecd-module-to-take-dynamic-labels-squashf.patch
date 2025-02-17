@@ -1,7 +1,7 @@
 From 0e29a3c94a9fd895149741ec35d80021bb37e627 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 15 Feb 2025 12:54:53 -0600
-Subject: [PATCH 50/50] improve livecd module to take dynamic labels/squashfs
+Subject: [PATCH 50/58] improve livecd module to take dynamic labels/squashfs
  targets
 
 also add a cmdline arg for setting the squashfs image name

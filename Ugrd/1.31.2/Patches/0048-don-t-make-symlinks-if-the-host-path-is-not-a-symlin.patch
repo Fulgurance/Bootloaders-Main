@@ -1,7 +1,7 @@
 From 160305400f8efa41010208aa74b862de337900e6 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Fri, 14 Feb 2025 16:11:43 -0600
-Subject: [PATCH 48/50] don't make symlinks if the host path is not a symlink
+Subject: [PATCH 48/58] don't make symlinks if the host path is not a symlink
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

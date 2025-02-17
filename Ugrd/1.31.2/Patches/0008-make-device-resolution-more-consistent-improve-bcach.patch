@@ -1,7 +1,7 @@
 From c8a6e3cd9a239c9bf4b0872927843f4d14c092a9 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sun, 26 Jan 2025 13:48:35 -0600
-Subject: [PATCH 08/50] make device resolution more consistent, improve
+Subject: [PATCH 08/58] make device resolution more consistent, improve
  bcachefs handling
 
 use the first device in bcachefs groups for resolve_dev device id

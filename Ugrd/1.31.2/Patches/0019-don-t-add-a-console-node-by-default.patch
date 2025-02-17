@@ -1,7 +1,7 @@
 From a5103fb368e7205147516dfae31b75937529342c Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Sat, 1 Feb 2025 19:40:14 -0600
-Subject: [PATCH 19/50] don't add a console node by default
+Subject: [PATCH 19/58] don't add a console node by default
 
 Signed-off-by: Zen <z@pyl.onl>
 ---

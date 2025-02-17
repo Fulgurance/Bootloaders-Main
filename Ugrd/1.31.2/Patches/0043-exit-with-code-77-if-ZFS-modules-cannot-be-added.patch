@@ -1,7 +1,7 @@
 From 1d6e680ba813911e7132279792af438c8ca0a764 Mon Sep 17 00:00:00 2001
 From: Zen <z@pyl.onl>
 Date: Thu, 6 Feb 2025 18:40:36 -0600
-Subject: [PATCH 43/50] exit with code 77 if ZFS modules cannot be added
+Subject: [PATCH 43/58] exit with code 77 if ZFS modules cannot be added
 
 Signed-off-by: Zen <z@pyl.onl>
 ---
