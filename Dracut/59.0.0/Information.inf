@@ -1,0 +1,19 @@
+PORT
+    Bootloaders-Main
+NAME
+    Dracut
+VERSION
+    59.0.0
+ARCHITECTURES
+    x86_64
+DESCRIPTION
+    The event driven initramfs infrastructure
+WEBSITE
+    https://github.com/dracutdevs/dracut
+DEPENDENCIES
+        @Archivers-Main:Cpio>=2.14.0
+KERNELDEPENDENCIES
+OPTIONS
+UNIQUEDEPENDENCIES
+UNIQUEOPTIONS
+ALLOWCODEPENDENCIES

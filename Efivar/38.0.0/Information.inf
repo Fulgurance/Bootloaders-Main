@@ -1,0 +1,19 @@
+PORT
+    Bootloaders-Main
+NAME
+    Efivar
+VERSION
+    38.0.0
+ARCHITECTURES
+    x86_64
+DESCRIPTION
+    Tools and libraries to work with EFI variables
+WEBSITE
+    https://github.com/rhboot/efivar
+DEPENDENCIES
+        @Utilities-Main:Mandoc>=1.14.6
+KERNELDEPENDENCIES
+OPTIONS
+UNIQUEDEPENDENCIES
+UNIQUEOPTIONS
+ALLOWCODEPENDENCIES

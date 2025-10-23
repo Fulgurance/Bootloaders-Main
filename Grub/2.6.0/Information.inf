@@ -1,0 +1,47 @@
+PORT
+    Bootloaders-Main
+NAME
+    Grub
+VERSION
+    2.6.0
+ARCHITECTURES
+    x86_64
+DESCRIPTION
+    Multiboot boot loader
+WEBSITE
+    https://www.gnu.org/software/grub/
+DEPENDENCIES
+        @SystemBase-Main:SystemBase>=0.2.0
+KERNELDEPENDENCIES
+OPTIONS
+    name: Unifont
+    description: Enable Unifont support
+    active: true
+    dependencies:
+        @Fonts-Main:Unifont>=13.0.6
+    kernelDependencies:
+
+    name: Efibootmgr
+    description: Enable Efibootmgr support
+    active: false
+    dependencies:
+        @Bootloaders-Main:Efibootmgr>=17.0.0
+    kernelDependencies:
+
+    name: FreeType
+    description: Enable FreeType support
+    active: true
+    dependencies:
+        @GraphicsLibraries-Main:FreeType>=2.11.0
+    kernelDependencies:
+
+    name: Lvm2
+    description: Enable Lvm2 support
+    active: false
+    dependencies:
+        @FileSystems-Main:Lvm2>=2.3.13
+    kernelDependencies:
+
+UNIQUEDEPENDENCIES
+UNIQUEOPTIONS
+ALLOWCODEPENDENCIES

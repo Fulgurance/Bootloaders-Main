@@ -1,0 +1,30 @@
+PORT
+    Bootloaders-Main
+NAME
+    Efibootmgr
+VERSION
+    18.0.0
+ARCHITECTURES
+    x86_64
+DESCRIPTION
+    Linux user-space application to modify the Intel EFI Boot Manager
+WEBSITE
+    https://github.com/rhboot/efibootmgr
+DEPENDENCIES
+        @Bootloaders-Main:Efivar>=38.0.0
+        @BaseLibraries-Main:Popt>=1.19.0
+KERNELDEPENDENCIES
+    CONFIG_EFI
+    CONFIG_EFI_STUB
+    CONFIG_EFI_VARS
+    CONFIG_EFI_RUNTIME_MAP
+    CONFIG_PARTITION_ADVANCED
+    CONFIG_EFI_PARTITION
+    CONFIG_FB
+    CONFIG_FB_EFI
+    CONFIG_FRAMEBUFFER_CONSOLE
+    CONFIG_EFIVAR_FS
+OPTIONS
+UNIQUEDEPENDENCIES
+UNIQUEOPTIONS
+ALLOWCODEPENDENCIES

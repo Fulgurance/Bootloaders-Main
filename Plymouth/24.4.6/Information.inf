@@ -1,0 +1,19 @@
+PORT
+    Bootloaders-Main
+NAME
+    Plymouth
+VERSION
+    24.4.6
+ARCHITECTURES
+    x86_64
+DESCRIPTION
+    Boot splash and boot logger
+WEBSITE
+    https://gitlab.freedesktop.org/plymouth/plymouth
+DEPENDENCIES
+        @SystemBase-Main:SystemBase>=0.2.0
+KERNELDEPENDENCIES
+OPTIONS
+UNIQUEDEPENDENCIES
+UNIQUEOPTIONS
+ALLOWCODEPENDENCIES
